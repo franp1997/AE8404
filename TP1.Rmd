@@ -1,0 +1,30 @@
+---
+title: "Aprendizaje Estadístico -  (84:04)"
+author: "Alejandro Verri"
+subtitle: Doctorado en Ingeniería Civil
+output: tint::tintPdf
+bibliography: skeleton.bib
+link-citations: yes
+---
+
+```{r setup, include=FALSE, warning=FALSE,echo=FALSE}
+source("setup.R",local=TRUE)
+```
+
+# Guía de Trabajos Prácticos - 
+
+**Curso:** [Aprendizaje Estadístico (84.04)](https://campus.fi.uba.ar/course/view.php?id=1312)\
+**Cátedra:** Ing. [Jemina García](http://www.ic.fcen.uba.ar/institucional/integrantes/ing-garcia-jemina)\
+**Alumno:** Ing. [Alejandro Verri Kozlowski](mailto:averri@fi.uba.ar)\
+**Carrera:** Doctorado en Ingeniería Civil\
+**Lenguaje:** R y RMarkdown [^1]\
+**Librerías:** `prettydoc`, `ggplot2`
+
+
+## Ejercicios - Estimación no-paramétrica
+En el archivo `buffalo.txt` se encuentran los datos que corresponden a la mediciones de cantidad de nieve ca ́ıda (en pulgadas) en Buffalo en los inviernos de 1910/1911 a 1972/1973.
+Realizar un histograma para estos datos utilizando los parámetros por defecto. Repetir eligiendo como puntos de corte las siguiente secuencias
+
+```{r}
+DT <- fread(text="data/buffalo.txt", header = FALSE) |> transpose()
+```
