@@ -3,14 +3,14 @@ title: "Aprendizaje Estadístico -  (84:04)"
 author: 'Alumnos: Alejandro Verri Kozlowski, José Manuel Pereiras'
 subtitle: 'Docente: Jemina García'
 output:
+  bookdown::gitbook: 
+    number_sections: no
+  tint::tintHtml: null
+  tint::tintPdf: null
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
-  tint::tintHtml: null
-  tint::tintPdf: null
-  bookdown::gitbook: 
-    number_sections: no
   html_document:
     toc: no
     df_print: paged
@@ -96,7 +96,7 @@ Calcular la estimación de la probabilidad definida en el ítem anterior para ca
 
 _La tabla siguiente muestra las probabilidades estimadas mediante la función `Px.h (x,X,h)` para los 10 primeros valores del vector `X`_
 
-```{r}
+```{r, echo=TRUE}
 TABLE <- data.table(
   "x[i]"=X,
   "Px(h=10)"=Px.h(x=X,X=X,h=10) |> round(digits = 4),
@@ -105,13 +105,13 @@ TABLE <- data.table(
 )
 head(TABLE,10) |> flextable()
 ```
-```{r}
+```{r echo=TRUE,out.width="75%"}
 DATA <- rbindlist(use.names = TRUE,l=list(
   data.table(h=10,x=X,Ph=Px.h(x=X,X=X,h=10)),
   data.table(h=20,x=X,Ph=Px.h(x=X,X=X,h=20)),
   data.table(h=30,x=X,Ph=Px.h(x=X,X=X,h=30)))
 )
-ggplot(DATA[,.(x,Ph,h=as.factor(h))], aes(x=x, y=Ph, fill=h, color=h)) + geom_line() +  theme_bw()
+ggplot(DATA[,.(x,Ph,h=as.factor(h))], aes(x=x, y=Ph, fill=h, color=h)) + geom_line() +facet_wrap(~h) +  theme_bw()
 ```
 
 ## Ejercicio 5
@@ -125,7 +125,7 @@ _Si se efectúa un cambio de variable $t = (x-X_i)/h$ la función indicadora que
 
 $$\hat f_h(x) \approx \frac{1}{h n} \sum_{i=1}^{n} K \left( \frac{x-X_i}{h} \right)$$
 
-_A partir de esta definición, la siguiente rutina implementa la función del núcleo uniforme Ku(u)y el estimador de densidad `densidad.est.parzen`_
+_A partir de esta definición, la siguiente rutina implementa la función del núcleo uniforme `Ku(t)` y el estimador de densidad `densidad.est.parzen()`_
 
 ```{r echo=TRUE}
 Ku <- function(u){  1/2*(u > -1 &  u < +1)}
@@ -137,7 +137,7 @@ densidad.est.parzen <- function(x,X,h){
 ## Ejercicio 6
 Con la función `densidad.est.parzen()` implementada, estimar la densidad f en el intervalo `(25,126.4)` (mínimo y máximo de las observaciones) sobre una grilla de 200 puntos equiespaciados para `h = 10, 20, 30`. Graficar las estimaciones obtenidas sobre un mismo gráfico.
 
-```{r}
+```{r echo=TRUE,out.width="75%"}
 xgrid <- seq(from=25,to=126.4,length.out=200)
 
 DATA <- rbindlist(use.names = TRUE,l=list(
@@ -145,29 +145,28 @@ DATA <- rbindlist(use.names = TRUE,l=list(
   data.table(h=20,x=xgrid,fh=densidad.est.parzen(x=xgrid,X=X,h=20)),
   data.table(h=30,x=xgrid,fh=densidad.est.parzen(x=xgrid,X=X,h=30)))
 )
-ggplot(DATA[,.(x,fh,h=as.factor(h))]) + geom_line(aes(x=x, y=fh, color=h))+ theme_bw()
+ggplot(DATA[,.(x,fh,h=as.factor(h))]) + geom_col(aes(x=x, y=fh,color=h))+facet_wrap(~h) + theme_bw()
 ```
 
 ## Ejercicio 7
 La función de R `density()` computa un estimador de la densidad utilizando núcleos a partir de un conjunto de datos y la evalúa en un conjunto de puntos intermedios. Mediante la función de R `density()` estimar la función de densidad $f_h(x)$  a partir de los datos de Buffalo utilizando el núcleo normal, el rectangular y el de Epanechnikov con ventana `h = 5`. Realizar un gráfico superponiendo las tres estimaciones de f y el histograma.
 
-```{r}
-G5 <- density(X,kernel = "gaussian",bw=5)
-R5 <- density(X,kernel = "rectangular",bw=5)
-E5 <- density(X,kernel = "epanechnikov",bw=5)
-
-DATA <- rbindlist(use.names = TRUE,l=list(
-  data.table(x=G5$x,fh=G5$y,kernel="gaussian",bw=G5$bw),
-  data.table(x=R5$x,fh=R5$y,kernel="rectangular",bw=R5$bw),
- data.table(x=E5$x,fh=E5$y,kernel="epanechnikov",bw=E5$bw)
-))
-ggplot(DATA,aes(color=kernel)) + geom_line(aes(x=x,y=fh)) + theme_bw()
+```{r echo=TRUE,out.width="75%"}
+DATA <- data.table()
+BW <- 5
+for(KERNEL in c("gaussian","rectangular","epanechnikov")){
+    D <-  density(X,kernel = KERNEL,bw=BW)
+    DT <- data.table(x=D$x,fh=D$y,kernel = as.factor(KERNEL),bw=BW)
+    DATA <- rbind(DATA,DT)
+}
+ggplot(DATA) +geom_line(aes(x=x,y=fh,color=kernel),size=1)+facet_wrap(~kernel)  + theme_bw()
+# ggplot(DATA,aes(color=kernel)) +geom_histogram(aes(x=x),fill="transparent",binwidth = BW)  + theme_bw()
 ```
 
 ## Ejercicio 8
 Repetir el ítem anterior para `h = 1,5,10,20,50`. Estudiar el comportamiento de las diferentes estimaciones.
 
-```{r}
+```{r echo=TRUE,out.width="75%"}
 DATA <- data.table()
 for(KERNEL in c("gaussian","rectangular","epanechnikov")){
   for(BW in c(5,10,15,20,30,50)){
@@ -176,9 +175,7 @@ for(KERNEL in c("gaussian","rectangular","epanechnikov")){
     DATA <- rbind(DATA,DT)
   }
 }
-par(mfrow=c(1,3), mar=c(0,1,1,0))
-ggplot(data=DATA[kernel=="rectangular"],aes(x=x,y=fh,linetype=kernel,color=bw))+geom_line()+ theme_bw()
-ggplot(data=DATA[kernel=="gaussian"],aes(x=x,y=fh,linetype=kernel,color=bw))+geom_line()+ theme_bw()
-ggplot(data=DATA[kernel=="epanechnikov"],aes(x=x,y=fh,linetype=kernel,color=bw))+geom_line()+ theme_bw()
+ggplot(DATA,aes(color=bw)) +geom_line(aes(x=x,y=fh))+facet_wrap(~kernel)  + theme_bw()
+
 ```
 
