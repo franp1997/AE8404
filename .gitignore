@@ -41,3 +41,9 @@ vignettes/*.pdf
 rsconnect/
 
 byteC/
+
+libs/
+
+TP1_files/
+
+*.html
