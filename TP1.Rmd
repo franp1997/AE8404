@@ -29,7 +29,7 @@ En el archivo `buffalo.txt` se encuentran los datos que corresponden a la medici
 DT <- fread("data/buffalo.txt", sep=" ") |> transpose() 
 X <- DT$V1 |> sort()
 summary(X)
-hist(X, main="Default",col = "seagreen2",labels = TRUE)
+hist(X, main="Default",col = "seagreen2",labels = TRUE,freq=FALSE)
 ```
 
 
@@ -39,20 +39,20 @@ a.  De 20 a 130 con un paso de 10
 
 ```{r }
 BRK <- seq(from=20,to=130,by=10)
-hist(X,breaks=BRK, main="a)", col = "rosybrown", labels = TRUE)
+hist(X,breaks=BRK, main="a)", col = "rosybrown", labels = TRUE,freq=FALSE)
 ```
 
 b.  De 22 a 132 con un paso de 10  
 
 ```{r }
 BRK <- seq(from=22,to=132,by=10)
-hist(X,breaks=BRK,main=NULL, col = "rosybrown", labels = TRUE)
+hist(X,breaks=BRK,main=NULL, col = "rosybrown", labels = TRUE,freq=FALSE)
 ```
 
 c.  De 24 a 134 con un paso de 10  
 ```{r }
 BRK <- seq(from=24,to=134,by=10)
-hist(X,breaks=BRK, main="c)", col = "rosybrown", labels = TRUE)
+hist(X,breaks=BRK, main="c)", col = "rosybrown", labels = TRUE,freq=FALSE)
 ```
 
 d.  De 26 a 136 con un paso de 10 [^A]  
@@ -70,7 +70,7 @@ Realizar un histograma para estas observaciones utilizando puntos de corte `(10,
 
 ```{r echo=TRUE}
 BRK <- seq(from=10,to=130,by=10)
-hist(X,breaks=BRK,main="", col = "plum", labels = TRUE)
+hist(X,breaks=BRK,main="", col = "plum", labels = TRUE,freq=FALSE)
 ```
 
 _Los histogramas con el mismo ancho de contenedor $h$ (binwidth) son diferentes y dependen fuertemente de la elección del origen $x_0$. Para un mismo $h$, la elección del punto inicial  $x_0$ cambia completamente la forma (distribución de frecuencias) del histograma._
