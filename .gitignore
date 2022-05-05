@@ -47,3 +47,7 @@ libs/
 TP1_files/
 
 *.html
+
+*.log
+
+*.tex

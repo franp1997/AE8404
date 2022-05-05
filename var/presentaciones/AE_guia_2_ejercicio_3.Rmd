@@ -1,0 +1,321 @@
+---
+title: "AE. Guia 2 - Ejercicio 3"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Ejercicio 3
+
+Se consideran los siguientes dos métodos para encontrar intervalos de confianza *bootstrap*:
+
+### Método 1
+
+Supongamos que $\hat \theta$ tiene distribución aproximadamente normal con media $\theta$. Luego, un intervalo de nivel aproximado $1 − \alpha$ es
+
+$$\left[\hat \theta − z_{1-\frac{\alpha}{2}} \sqrt{v^2},\hat \theta + z_{1-\frac{\alpha}{2}} \sqrt{v^2}\right]$$donde $v^2$ es un estimador de la varianza de $\hat \theta$. Por otra parte, el estimador $v^2$ puede obtenerse con *Bootstrap*, es decir, considerando realizaciones $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$ del estimador basadas en remuestreos de la distribución empírica y tomando $v^2 = \textbf{var}(\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}})$.
+
+### Método 2
+
+Se consideran realizaciones $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$ del estimador $\hat\theta$ obtenidos haciendo *Bootstrap* como en el método anterior. Luego, un posible intervalo de nivel aproximado $1- \alpha$ es
+
+$$\left[\hat \theta^*_{\frac{\alpha}{2}},\hat \theta^*_{1-\frac{\alpha}{2}}\right]$$
+
+donde $\hat \theta^∗_\gamma$ es el $\gamma$−percentil de la muestra $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$.
+
+------------------------------------------------------------------------
+
+```{r}
+set.seed(1)
+```
+
+a\. Se quiere hacer intervalos de confianza para la mediana $m$ de una distribución $X$ usando a la mediana muestral como estimador. Para eso, implementar dos funciones `boot.metodo.1` y `boot.metodo.2` que tengan como *input* el nivel $1−α$ y datos $x_1,\dots, x_n$ y devuelvan el intervalo de confianza siguiendo la estrategia del método correspondiente.
+
+```{r}
+# Armo una funcion nboot_sample que depende de los datos de la muestra original 
+# (data), del estadistico (la mediana), y del numero de veces que se hace el 
+# resample (nboot).
+
+# Luego en base a la muestra generada en el paso anterior saco una muestra cuyo
+# largo es length(data) * nboot , esto equivale a sacar nboot muestras de largo
+# length (data) con reposicion. Asi se genera data_samples.
+# Con data_samples armo una matriz cuyo numero de filas es la cantidad de veces 
+# que hago el resample (nboot)
+
+# Finalmente con la funcion "apply" aplicado a los datos obtenidos del resample,
+# los tomo por filas (Margin = 1), y le aplico a cada fila el estadistico, mediana # en nuestro caso, (FUN=stadistic).
+
+# return para obtener los resultados del resampleo
+
+nboot_sample <- function(data, stadistic, nboot) {
+  data_samples <- sample(data, length(data) * nboot, replace = T)
+  data_samples <- matrix(data_samples, nrow = nboot)
+  return (apply(data_samples, MARGIN = 1, FUN = stadistic))
+}
+```
+
+```{r}
+# Probamos si lo anterior funciona suponiendo que la muestra inicial es de 
+# tamaño 10 con distribucion normal centrada en el origen generado
+# por rnorm(10) (mean = 0, sd = 1), el estadistico es la mediana (median) y 
+# resample 100 veces (nboot = 100). Ademas le calculo el desvio standard al
+# resample
+
+# probemos como funciona rnorm
+rnorm(10, mean = 0, sd = 1)
+mean(rnorm(10))
+sd(rnorm(10))
+
+# ahora si probamos 
+# a la muestra que nos dio rnorm l vamos a bootstrapear 100 veces y
+# aplicarle la mediana, para finalmente aplicarle la mediana.
+
+nboot_sample(rnorm(10), median, nboot = 100)
+
+```
+
+```{r}
+# Probamos si lo anterior funciona haciendo una muestra de 30 y 100 resample
+nboot_resample <- nboot_sample(rnorm(30), median, 100)
+nboot_resample
+print('')
+median(nboot_resample)
+sd(nboot_resample)
+```
+
+### Método 1
+
+Supongamos que $\hat \theta$ tiene distribución aproximadamente normal con media $\theta$. Luego, un intervalo de nivel aproximado $1 − \alpha$ es
+
+$$\left[\hat \theta − z_{1-\frac{\alpha}{2}} \sqrt{v^2},\hat \theta + z_{1-\frac{\alpha}{2}} \sqrt{v^2}\right]$$donde $v^2$ es un estimador de la varianza de $\hat \theta$. Por otra parte, el estimador $v^2$ puede obtenerse con *Bootstrap*, es decir, considerando realizaciones $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$ del estimador basadas en remuestreos de la distribución empírica y tomando $v^2 = \textbf{var}(\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}})$.
+
+```{r}
+# Metodo 1
+
+# Defino una funcion boot.metodo.1 que depende de los datos, el alfa = 0.05,
+# el estadistico y de las veces que hago el reboot nboot = 1000.
+
+# La funcion qnorm permite encontrar el percentil Q de una distribucion normal por # ejemplo para alfa=0.05 qnorm(1 - 0.05 / 2) = 1.95994  y 
+# qnorm(0.05 / 2) = -1.95994 
+
+boot.metodo.1 <-function(data, alpha, stadistic, nboot = 1000) {
+  x_hat <- stadistic(data)                 
+  z <- qnorm(1 - alpha/ 2)                
+  bootstrap_sample_stadistic <- nboot_sample(data, stadistic, nboot)
+  v <- sd(bootstrap_sample_stadistic)     
+  half_width <- z * v                      # ver intervalos de confianza.
+  # El parametro = punto de estimacion +/- margen de error , el margen de error es
+                                           # z * v.
+  return(c(x_hat - half_width, x_hat + half_width))
+}
+```
+
+```{r}
+boot.metodo.1(rnorm(100), alpha = 0.05, stadistic = median)
+```
+
+### Método 2
+
+Se consideran realizaciones $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$ del estimador $\hat\theta$ obtenidos haciendo *Bootstrap* como en el método anterior. Luego, un posible intervalo de nivel aproximado $1- \alpha$ es
+
+$$\left[\hat \theta^*_{\frac{\alpha}{2}},\hat \theta^*_{1-\frac{\alpha}{2}}\right]$$
+
+donde $\hat \theta^∗_\gamma$ es el $\gamma$−percentil de la muestra $\hat \theta^∗_1, \dots \hat \theta^∗_{n_\text{boot}}$.
+
+------------------------------------------------------------------------
+
+```{r}
+boot.metodo.2 <- function(data, alpha, stadistic, nboot = 100) {
+  bootstrap_sample_stadistic <- nboot_sample(data, stadistic, nboot)
+  ci <- quantile(bootstrap_sample_stadistic, 
+                 prob = c(alpha / 2, 1 - alpha / 2))
+  return (unname(ci))
+}
+```
+
+```{r}
+boot.metodo.2(rnorm(100), 0.05, median)
+```
+
+b\. Para cada $n \in \{30, 50, 100, 1000\}$, generar $1000$ muestras de una distribución $\mathcal{N}(0, 1)$ y para cada una de ellas obtener los intervalos de nivel $0.95$ con el **método 1**. Luego, para cada $n$ completar la siguiente tabla.
+
+|                           |           |           |           |           |
+|---------------------------|-----------|-----------|-----------|-----------|
+|                           | $n=30$    | $n=50$    | $n = 100$ | $n=1000$  |
+| Longitud promedio         | $0.15172$ | $0.15636$ | $0.15709$ | $0.15526$ |
+| Proporción de cubrimiento | $0.93$    | $0.94$    | $0.94$    | $0.93$    |
+
+```{r}
+show_results <- function(sampler, method, stadistic) {
+  for (n in c(30, 50, 100, 1000)) {
+    count_inside <- 0
+    total_length <- 0
+    for (i in 1:n) {
+      data_sample <- sampler(1000)
+      x_real <- 0
+      ci <- method(data_sample, 0.05, stadistic)
+      len <- ci[2] - ci[1]
+      total_length <- total_length + len
+      if (ci[1] <= x_real && x_real <=ci[2]) {
+        count_inside <- count_inside + 1
+      }
+    }
+    avg_length <- total_length / n
+    coverage <- count_inside / n
+    print(paste(n, avg_length, coverage))
+  }
+}
+```
+
+```{r}
+show_results(rnorm, boot.metodo.1, median)
+# Vemos que para una muestra normal, n = 50 se obtienen los
+# mejores resultado con el metodo 1
+```
+
+Hacer lo mismo para el **método 2** y comparar ambos métodos.
+
+|                           |           |           |           |           |
+|---------------------------|-----------|-----------|-----------|-----------|
+|                           | $n=30$    | $n=50$    | $n = 100$ | $n=1000$  |
+| Longitud promedio         | $0.14843$ | $0.14985$ | $0.14948$ | $0.14905$ |
+| Proporción de cubrimiento | $0.93$    | $0.96$    | $0.94$    | $0.937$   |
+
+```{r}
+show_results(rnorm, boot.metodo.2, median)
+# En el caso del metodo 2 con Nboot = 1000 y n = 50 elementos 
+# tambien da lo mejor
+```
+
+------------------------------------------------------------------------
+
+c\. Repetir el item anterior para muestras de distribución Cauchy (también llamada $t_1$). Esta distribución es simétrica respecto del 0 y no tiene esperanza finita.
+
+```{r}
+x_range <- seq(-10, 10, by = 0.1)
+plot(x_range, dnorm(x_range), type = "l", 
+     xlab = "x", ylab = "f_X", 
+     main = "Distribución de Cauchy")
+
+lines(x = x_range, y = dcauchy(x_range),
+      col = "red")
+
+legend("topleft", legend = c("Normal", "Cauchy"), 
+       col = c("black", "red"), lwd = 1)
+```
+
+```{r}
+show_results(rcauchy, boot.metodo.1, median)
+
+# vemos que con una distribucion de Cauchy con el metodo 1 cambiando n no cambia
+# significativamente resultado de la media, pero sí la cobertura va decreciendo.
+```
+
+```{r}
+show_results(rcauchy, boot.metodo.2, median)
+# vemos que con una distribucion de Cauchy con el metodo 2 cambiando n no cambia
+# significativamente resultado de la media, pero sí la cobertura que crece 
+# y decrece.
+```
+
+## Anexo: `np.boot`
+
+Un intento usando la función `np.boot`
+
+```{r}
+# Que pasa si usamos la funcion np.boot para implementar el bootstrap no parametrico.
+set.seed(1)
+
+library(nptest)
+# generamos 100 muestras con distribucion normal
+n <- 100
+x <- rnorm(n)
+# Aqui va el bootstrap  no parametrico
+npbs <- np.boot(x = x, statistic = median)
+npbs
+
+# Bootsrap no parametrico de estadistico (mediana) univariadas
+# La cantidad de resamples es de 9999 por cada muestra normal
+# Luego de correr esto surge
+#t0: 0.1139
+ # SE: 0.1393
+#Bias: -0.0184
+
+#BCa Confidence Intervals (Intervalos de confianzo con el bias corregido y acelerado)
+#      lower  upper
+#90% -0.1539 0.2767
+#95% -0.2014 0.3406
+#99% -0.2974 0.3744
+
+
+# Chequeo t0,desvio SE de muestras resampleads ,y bias 
+median(x)                      # t0
+sd(npbs$boot.dist)             # desvio 
+mean(npbs$boot.dist) - npbs$t0 # bias
+```
+
+```{r}
+# La distribucion del bootstarp
+hist(npbs$boot.dist,
+     xlab = "Estadistico",
+     main="Bootsrap Distribucion")
+box()
+abline(v = npbs$t0, lty = 2, col = "red")
+legend("topleft", "t0", lty = 2, col = "red", bty = "n")
+```
+
+```{r}
+# Que pasa si usamos la funcion np.boot para implementar el bootstrap no parametrico y un estadistico multivariante como los quartiles
+# Los quartles de la poblacion son Q1=qnorm(0.25)=-0.6744 , Q2=qnorm(0.5)=0, y 
+#Q3=qnorm(0.75)=0.6744
+#Los quartiles son un estadistico multivariado , la distribucion del bootstrap sera una matriz de dimension R(9999)+1 x 3 donde cada columna contiene al resampleo (9999 veces)+ un dato de la muestra original  para los 3 quartiles
+library(nptest)
+# generamos 100 muestras con distribucion normal
+n <- 100
+x <- rnorm(n)
+# Aqui va el bootstrap  no parametrico
+npbs <- np.boot(x = x, 
+                statistic = quantile, 
+                probs = c(0.25, 0.5, 0.75))
+npbs
+
+# Luego de correr esto surge
+#Nonparametric Bootstrap of Multivariate Statistic
+#using R = 9999 bootstrap replicates
+
+#          25%    50%    75%
+#  t0: -0.4709 0.0814 0.7303
+#  SE:  0.0990 0.1255 0.1356
+#Bias: -0.0011 0.0205 0.0169
+
+#95% BCa Confidence Intervals:
+  #        25%     50%    75%
+#lower -0.7089 -0.1579 0.4908
+#upper -0.2889  0.3228 0.9936
+          
+# Chequeo  t0,SE y bias
+quantile(x, probs = c(0.25, 0.5, 0.75))  # t0
+          
+# Chequeo SD
+apply(npbs$boot.dist, 2, sd)     #SE
+ 
+# Bias
+colMeans(npbs$boot.dist) - npbs$t0
+```
+
+```{r}
+# La distribucion del bootstrap
+par(mfrow = c(1, 3))
+for (j in 1:3) {
+ hist(npbs$boot.dist[, j],
+      xlab = "Statistic",
+      main = paste0("Bootstap Distribucion", ":Q", j))
+ box()
+ abline(v = npbs$t0[j], lty = 2, col = "blue")
+ legend("topright", paste0("t0[", j, "l"),
+        lty = 2, col = "red", bty = n)
+}
+ 
+ # Estos dos ejemplos con la funcionnp.boot estan en 
+ #   http://users.stat.umn.edu/~helwig/notes/npboot-notes.html
+```

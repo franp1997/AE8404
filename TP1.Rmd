@@ -3,14 +3,14 @@ title: "Aprendizaje Estadístico -  (84:04)"
 author: 'Alumnos: Alejandro Verri Kozlowski, José Manuel Pereiras'
 subtitle: 'Docente: Jemina García'
 output:
-  bookdown::gitbook: 
-    number_sections: no
-  tint::tintHtml: null
-  tint::tintPdf: null
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
+  tint::tintHtml: null
+  tint::tintPdf: null
+  bookdown::gitbook: 
+    number_sections: no
   html_document:
     toc: no
     df_print: paged
