@@ -1,0 +1,18 @@
+---
+subtitle: "Aprendizaje Estadístico -  (84:04)"
+author: 'Alejandro Verri Kozlowski'
+title: 'Práctica 2'
+output:
+  bookdown::gitbook: 
+    number_sections: no
+  pdf_document:
+    toc: no
+    number_sections: no
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+source("R/setup.R", local = TRUE)
+```
+
+# Práctica 1

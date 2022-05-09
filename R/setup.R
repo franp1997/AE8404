@@ -4,7 +4,14 @@ library(ggplot2)
 library(data.table)
 library(ggthemes)
 library(flextable)
+library(npm)
 # Rmarkdown ----
+
+
+if(!equatags::mathjax_available()){
+  equatags::mathjax_install()
+}
+
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
@@ -17,7 +24,7 @@ out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
 
 use_df_printer()
 set_flextable_defaults(
-  font.size = 10, font.family="Helvetica",border.color = "gray",
+  font.size = 10,border.color = "gray",
   padding.bottom = 3,   padding.top = 3,
   padding.left = 4,  padding.right = 4,
   post_process_html = function(x){

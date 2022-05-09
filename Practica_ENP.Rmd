@@ -1,25 +1,19 @@
 ---
-title: "Aprendizaje Estadístico -  (84:04)"
-author: 'Alumnos: Alejandro Verri Kozlowski, José Manuel Pereiras'
-subtitle: 'Docente: Jemina García'
+subtitle: "Aprendizaje Estadístico -  (84:04)"
+author: 'Alejandro Verri Kozlowski'
+title: 'Estimación No-Paramétrica'
 output:
-  pdf_document:
-    toc: yes
-    number_sections: no
-    latex_engine: xelatex
-  tint::tintHtml: null
-  tint::tintPdf: null
   bookdown::gitbook: 
     number_sections: no
-  html_document:
+  pdf_document:
     toc: no
-    df_print: paged
+    number_sections: no
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
 source("R/setup.R", local = TRUE)
 ```
-
 # Estimación no-paramétrica
 ## Ejercicio 1
 En el archivo `buffalo.txt` se encuentran los datos que corresponden a la mediciones de cantidad de nieve caída (en pulgadas) en Buffalo en los inviernos de 1910/1911 a 1972/1973.Realizar un histograma para estos datos utilizando los parámetros por defecto.  
