@@ -1,30 +1,85 @@
 ---
 subtitle: "Aprendizaje Estadístico -  (84:04)"
 author: 'Alejandro Verri Kozlowski'
-title: 'Práctica 3'
+title: 'Práctica 3 - Parte I'
 output:
-  bookdown::gitbook: 
-    number_sections: no
   pdf_document:
     toc: no
     number_sections: no
     latex_engine: xelatex
+  bookdown::gitbook: 
+    number_sections: no
 ---
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-source("R/setup.R", local = TRUE)
+library(ggplot2)
+library(data.table) # data,frame extendido
+library(ggthemes) 
+library(flextable) # Plot Tables
+
+# Rmarkdown ----
+
+
+if(!equatags::mathjax_available()){
+  equatags::mathjax_install()
+}
+
+knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+# Identificar output  ----
+out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+
+
+use_df_printer()
+set_flextable_defaults(
+  font.size = 10,border.color = "gray",
+  padding.bottom = 3,   padding.top = 3,
+  padding.left = 4,  padding.right = 4,
+  post_process_html = function(x){
+    # theme_booktabs(x)  |>
+    theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |> 
+      fontsize(size = 10, part = "header")|> 
+      fontsize(size = 10, part = "body")
+  },
+  post_process_pdf = function(x){
+    # theme_booktabs(x)  |>
+      theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |>
+      fontsize(size = 9, part = "header")|> 
+      fontsize(size = 9, part = "body")
+  },
+  post_process_docx = function(x){
+    theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |>
+      fontsize(size = 10, part = "header")|> 
+      fontsize(size = 9, part = "body")
+  }
+) 
 ```
 
-# Práctica 3 - Parte 1
-## Ejercicio 1
+### Ejercicio 1 {-}
 
 Implementar una función que dado un vector `y` de valores de respuesta y una matriz `X` de valores observados, mediante las ecuaciones normales, calcule el estimador de cuadrados mínimos
 
 
 
-## Ejercicio 2
+### Ejercicio 2 {-}
 
 Se tiene en el archivo `girasol.txt` el rinde de diversas parcelas de girasol (en toneladas) según la
 cantidad de dinero invertida en fertilizantes (en miles de pesos).
@@ -33,7 +88,7 @@ a Graficar en un diagrama de dispersión inversión vs rinde.
 b. Plantear un modelo de regresión lineal simple obtener el estimador de mı́nimos cuadrados.
 c. Graficar la recta de regresión obtenida, ¿detecta algo sospechoso?
 
-## Ejercicio 3
+### Ejercicio 3 {-}
 
 Considerar el archivo abalone.txt que contiene información sobre distintas muestras de abalones. Los atributos están separados por coma, con los siguientes campos: 
 
@@ -62,7 +117,7 @@ c. Se trata ahora de establecer una relación entre el peso total y el diámetro
 Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
 
 
-## Ejercicio 4
+### Ejercicio 4 {-}
 En este ejercicio se crearán datos simulados y se ajustará un modelo de regresión lineal simple.
  
 a) Utilizando la función rnorm, crear un vector x que contenga 100 observaciones provenientes de una distribución $X \sim \mathcal{N}(\mu=0,\,\sigma=1)$
@@ -85,7 +140,7 @@ c) Usando $x$ y $\varepsilon$, generar un vector acorde al modelo: $y = −1 + 0
 ```{r echo=TRUE}
 Y <- -1 + 0.5*X +e
 ```
-_La longitud del vector `y=-1+0.5*x+e` es igual a 100  ya que fue construido como la suma de dos vectores de 100 elementos, y además R tiene sobrecargado el operador suma y permite agregar la constante `1` a cada elemento del vector. Los parámetros $\beta_0$ y $\beta_1$ del modelo son en este caso $\beta_0=-1$ y $\beta_1=+0.5$_  
+_La longitud del vector `Y=-1+0.5*X+e` es igual a 100  ya que fue construido como la suma de dos vectores de 100 elementos, y además R tiene sobrecargado el operador suma y permite agregar la constante `1` a cada elemento del vector. Los parámetros $\beta_0$ y $\beta_1$ del modelo son los coeficientes de regresión del modelo, y para este caso resultan $\beta_0=-1$ y $\beta_1=+0.5$_  
   
   d) Realizar un scatterplot y observar la relación entre x e y.
   
@@ -105,9 +160,9 @@ b1 <- MDL$coefficients["x"]
 
 Comparar los valores exactos de $\beta_0$ Y $\beta_1$ con sus estimaciones. 
 ```{r}
-data.table("\\beta_0"=-1,"\\hat{\\beta_0}"=b0,"\\beta_1"=0.5,"\\hat{\\beta_1}"=b1) |> 
+data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(j = 4, digits = 8) |> 
+  colformat_double(digits = 8) |> 
   mk_par(i = 1, part = "header",
          value = as_paragraph(
            as_equation(.,width = .1, height = .2)),
@@ -130,7 +185,7 @@ ggplot() + geom_point(data=DT, aes(x=x, y=y),color="tomato") + geom_line(data=DT
 _Las lineas son prácticamente idénticas y no hay manera de diferenciarlas, tal como se vio en la comparación de los coeficientes_
 
 
-g) Ajustar un modelo polinomial que prediga y usando x y x 2 . 
+g) Ajustar un modelo polinomial que prediga y usando $x$ y $x^2$ . 
 
 ```{r echo=TRUE}
 DT <- data.table(y=Y,x1=X,x2=X^2)
@@ -139,12 +194,12 @@ b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x1"]
 b2 <- MDL$coefficients["x2"]
 ```
-_Los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente y se agrega un tercer estimador para el término cuadrático igual a $\hat{\beta_2}\approx$ `r b2`. _
+_Los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente y se agrega un tercer estimador para el término cuadrático igual a $\hat{\beta_2}\approx$ `r b2`_
 
 ```{r}
-data.table("\\beta_0"=-1,"\\hat{\\beta_0}"=b0,"\\beta_1"=0.5,"\\hat{\\beta_1}"=b1) |> 
+data.table("\\beta_0/\\hat{\\beta_0}"=-1/b0,"\\beta_1/\\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(j = 4, digits = 8) |> 
+  colformat_double(digits = 8) |> 
   mk_par(i = 1, part = "header", value = as_paragraph(as_equation(.,width = .1, height = .2)),use_dot = TRUE) |>  
   autofit()
 ```
@@ -152,13 +207,13 @@ data.table("\\beta_0"=-1,"\\hat{\\beta_0}"=b0,"\\beta_1"=0.5,"\\hat{\\beta_1}"=b
 
   ¿Encuentra alguna evidencia de que el término cuadrático mejora el ajuste del modelo? 
 
-_No, los estimadores $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` prácticamente no difieren de los anteriores._
+_No, los estimadores $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` prácticamente no difieren de los anteriores. _
 
 h) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que haya menos ruido en los datos. Una forma de hacerlo es disminuyendo el valor de la varianza de la distribución normal usada para general el término del error epsilon. 
 
-```{r }
-# 
-Y <- -1 + 0.5*X + 3*e
+```{r}
+e <- rnorm(n=100,mean=0,sd=0.025/5)
+Y <- -1 + 0.5*X + e
 DT <- data.table(x=X,y=Y)
 MDL <- lm(data=DT,y~1+x)
 b0 <- MDL$coefficients["(Intercept)"]
@@ -171,28 +226,91 @@ ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,
 ```
 
 
-i) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que haya más ruido en los datos. Una forma de hacerlo es aumentando el valor de la varianza de la distribución normal usada para general el término del error epsilon. 
+_Reduciendo la varianza cinco veces $(\varepsilon\sim \mathcal{N}(0,0.005)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
 
-```{r }
-DT1 <- data.table(x=X,y=Y)
-DT2 <- data.table(x=X,y=b0+b1*X)
-B0 <- -1
-B1 <- 0.5
 
-ggplot() + geom_point(data=DT1, aes(x=x, y=y),color="tomato") + geom_line(data=DT2,aes(x=x, y=y),color="red")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+```{r}
+data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
+  flextable() |> 
+  colformat_double(digits = 8) |> 
+  mk_par(i = 1, part = "header",
+         value = as_paragraph(
+           as_equation(.,width = .1, height = .2)),
+         use_dot = TRUE) |>  
+  autofit()
 ```
 
 
+i) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que haya más ruido en los datos. Una forma de hacerlo es aumentando el valor de la varianza de la distribución normal usada para general el término del error epsilon. 
+
+
+```{r }
+e <- rnorm(n=100,mean=0,sd=0.25)
+Y <- -1 + 0.5*X + 10*e
+DT <- data.table(x=X,y=Y)
+MDL <- lm(data=DT,y~1+x)
+b0 <- MDL$coefficients["(Intercept)"]
+b1 <- MDL$coefficients["x"]
+DTP <- data.table(x=X,y=b0+b1*X)
+B0 <- -1
+B1 <- 0.5
+
+ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+```
+
+
+_Aumentando la varianza cinco veces$(\varepsilon\sim \mathcal{N}(0,0.125)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
+
+```{r}
+data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
+  flextable() |> 
+  colformat_double(digits = 8) |> 
+  mk_par(i = 1, part = "header",
+         value = as_paragraph(
+           as_equation(.,width = .1, height = .2)),
+         use_dot = TRUE) |>  
+  autofit()
+```
+
 j) En ambos escenarios, hallar una estimación de la varianza. 
 
-## Ejercicio 5
+*XXX COMPLETAR XXX*
 
-a) Generar el siguiente modelo: Crear dos vectores de datos de tamaño 100 x 1 y x 2 a partir de una distribución uniforme en el intervalo (0, 1). 
+### Ejercicio 5 {-}
 
-Crear el vector y = 2 + 2 ∗ x 1 + 0,3 ∗ x 2 + , con  que contenga 100 observaciones provenientes de una distribución N (0, 1). ¿Cuales son los coeficientes de regresión?. Estimar la correlación entre x 1 y x 2 .
+  a) Generar el siguiente modelo: Crear dos vectores de datos  $x_1$ y $x_2$ de tamaño 100 con una distribución $X \sim\mathcal{U}(0,1)$  y crear un vector $y = 2 + 2 ∗ x_1 + 0,3 ∗ x_2 + \varepsilon$, con $\varepsilon$  que contenga 100 observaciones con una distribución $\varepsilon \sim\mathcal{N}(0,1)$. ¿Cuales son los coeficientes de regresión?. 
 
-Realizar un scatterplot en el que pueda observarse la relación entre x 1 y x 2 . Utilizando los datos generados, ajustar a un modelo lineal para predecir y en función de x 1 y x 2 , utilizando el método de cuadrados mı́nimos y comparar los valores exactos de β con sus valores estimados
-    
-b) Repetir el inciso a pero con el siguiente modelo: Crear dos vectores de datos de tamaño 100 x 1 a partir de una distribución uniforme en el intervalo (0, 1), y x 2 = 0,5 ∗ x 1 + rnorm(100)/10 . Crear el vector y = 2 + 2 ∗ x 1 + 0,3 ∗ x 2 + rnorm(100). Comparar los resultados obtenidos con los del ı́tem a. 
+```{r echo=TRUE}
+X1 <- runif(n=100,min=0,max=1)
+X2 <- runif(n=100,min=0,max=1)
+e <- rnorm(n=100,mean=0,sd=1)
+B0 <- 2
+B1 <- 2
+B2 <- 0.3
+Y <- B0+B1*X1+B2*X2+e
+```
+
+_Para el modelo propuesto, los coeficientes de regresión son $\beta_0=$ `r B0`, $\beta_1=$ `r B1` y $\beta_2=$ `r B2`_
+
+  c) Estimar la correlación entre $x_1$ y $x_2$
+
+  d) Realizar un scatterplot en el que pueda observarse la relación entre $x_1$ y $x_2$
+```{r }
+DT <- data.table(x1=X1,x2=X2)
+ggplot() + geom_point(data=DT, aes(x=x1, y=x2),color="blue")  + theme_bw()
+```
+  e) Utilizando los datos generados, ajustar a un modelo lineal para predecir y en función de $x_1$ y $x_2$ , utilizando el método de cuadrados mı́nimos y comparar los valores exactos de $\beta$  con sus valores estimados.
+```{r echo=TRUE}
+DT <- data.table(x1=X1,x2=X2,y=Y)
+MDL <- lm(data=DT,y~x1+x2)
+b0 <- MDL$coefficients["(Intercept)"]
+b1 <- MDL$coefficients["x1"]
+b2 <- MDL$coefficients["x2"]
+```
+  
+  _Los estimadores de los oeficientes de regresión del modelo, resultan en $\hat{\beta_0}=$ `r b0`,$\hat{\beta_0}=$ `r b1` y $\hat{\beta_0}=$ `r b2`_
+
+  
+  f) Repetir el inciso a) pero con el siguiente modelo: Crear dos vectores de datos de tamaño 100 x 1 a partir de una distribución uniforme en el intervalo (0, 1), y x 2 = 0,5 ∗ x 1 + rnorm(100)/10 . Crear el vector y = 2 + 2 ∗ x 1 + 0,3 ∗ x 2 + rnorm(100). Comparar los resultados obtenidos con los del ı́tem a. 
     
     
