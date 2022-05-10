@@ -1,14 +1,19 @@
 ---
-subtitle: "Aprendizaje Estadístico -  (84:04)"
-author: 'A. Verri Kozlowski y F. Patitucci'
-title: 'Práctica 3 - Parte I'
+title: "Práctica 3 - Parte I"
+author: "A. Verri Kozlowski y F. Patitucci"
+subtitle: Aprendizaje Estadístico -  (84:04)
 output:
+  bookdown::gitbook:
+    number_sections: no
   pdf_document:
     toc: no
     number_sections: no
     latex_engine: xelatex
-  bookdown::gitbook: 
-    number_sections: no
+    keep_tex: no
+  html_document:
+    toc: no
+    df_print: paged
+runtime: shiny
 ---
 
 
@@ -21,21 +26,81 @@ library(flextable) # Plot Tables
 
 # Rmarkdown ----
 
+# shiny ----
+plotNoise = function() {
 
+  library(shiny)  
+  
+  shinyApp(
+    
+    ui = fluidPage(
+      fluidRow(style = "padding-bottom: 20px;",
+        column(width=2, 
+               numericInput(inputId = 'n', label = 'n=',min=100,max=100000,value=100 )
+               ),
+        column(width=5, 
+               sliderInput(inputId = 'log10SD', label='log10(sd)=',min=-4,max=0,value = log10(0.025),step=0.1)
+               )
+      ),
+      fluidRow(
+        plotOutput('noise', height = "300px")  
+      )
+    ),
+
+    server = function(input, output, session) {
+
+      
+
+      output$noise = renderPlot(height = 400, {
+        req(input$log10SD,input$n)
+        S <- 10^(as.double(input$log10SD))
+        N <- as.integer(input$n)
+        e <- rnorm(n=N,mean=0,sd=S)
+        X <- rnorm(n=N,mean=0,sd=1)
+        Y <- -1 + 0.5*X + e
+        DT <- data.table(x=X,y=Y)
+        MDL <- lm(data=DT,y~1+x)
+        b0 <- MDL$coefficients["(Intercept)"]
+        b1 <- MDL$coefficients["x"]
+        DTP <- data.table(x=X,y=b0+b1*X)
+        OUT <- ggplot() + 
+          geom_point(data=DT, aes(x=x, y=y),color="plum") + 
+          geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ 
+          geom_abline(intercept = -1,slope = 0.5,color="blue") + 
+          theme_bw()
+        return(OUT)
+      })
+    },
+
+    options = list(height = 400)
+  )
+}
+# equatags ----
 if(!equatags::mathjax_available()){
   equatags::mathjax_install()
 }
-
+# kmit options ----
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
   ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
 })
-# Identificar output  ----
-out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+
+# out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+getOutputFormat <- function() {
+  output <- rmarkdown:::parse_yaml_front_matter(
+    readLines(knitr::current_input())
+    )$output
+  if (is.list(output)){
+    return(names(output)[1])
+  } else {
+    return(output[1])
+  }
+}
 
 
+# flextable  ----
 use_df_printer()
 set_flextable_defaults(
   font.size = 10,border.color = "gray",
@@ -73,13 +138,13 @@ set_flextable_defaults(
 ) 
 ```
 
-### Ejercicio 1 {-}
+## Ejercicio 1 {-}
 
 Implementar una función que dado un vector `y` de valores de respuesta y una matriz `X` de valores observados, mediante las ecuaciones normales, calcule el estimador de cuadrados mínimos
 
 
 
-### Ejercicio 2 {-}
+## Ejercicio 2 {-}
 
 Se tiene en el archivo `girasol.txt` el rinde de diversas parcelas de girasol (en toneladas) según la
 cantidad de dinero invertida en fertilizantes (en miles de pesos).
@@ -88,7 +153,7 @@ a Graficar en un diagrama de dispersión inversión vs rinde.
 b. Plantear un modelo de regresión lineal simple obtener el estimador de mı́nimos cuadrados.
 c. Graficar la recta de regresión obtenida, ¿detecta algo sospechoso?
 
-### Ejercicio 3 {-}
+## Ejercicio 3 {-}
 
 Considerar el archivo abalone.txt que contiene información sobre distintas muestras de abalones. Los atributos están separados por coma, con los siguientes campos: 
 
@@ -117,7 +182,7 @@ c. Se trata ahora de establecer una relación entre el peso total y el diámetro
 Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
 
 
-### Ejercicio 4 {-}
+## Ejercicio 4 {-}
 En este ejercicio se crearán datos simulados y se ajustará un modelo de regresión lineal simple.
  
 a) Utilizando la función rnorm, crear un vector x que contenga 100 observaciones provenientes de una distribución $X \sim \mathcal{N}(\mu=0,\,\sigma=1)$
@@ -162,7 +227,7 @@ Comparar los valores exactos de $\beta_0$ Y $\beta_1$ con sus estimaciones.
 ```{r}
 data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(digits = 8) |> 
+  colformat_double(digits = 4) |> 
   mk_par(i = 1, part = "header",
          value = as_paragraph(
            as_equation(.,width = .1, height = .2)),
@@ -172,7 +237,7 @@ data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b
  
 _Los estimadores de $\beta_0$ y $\beta_1$ resultaron $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1`, respectivamente_
   
-f) Graficar la recta de cuadrados mı́nimos sobre el gráfico realizado en (d). En otro color graficar la recta Y = −1 + 0,5X. 
+f) Graficar la recta de cuadrados mı́nimos sobre el gráfico realizado en (d). En otro color graficar la recta $Y = −1 + 0,5X$
 
 ```{r }
 DT <- data.table(x=X,y=Y)
@@ -199,7 +264,7 @@ _Los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\appr
 ```{r}
 data.table("\\beta_0/\\hat{\\beta_0}"=-1/b0,"\\beta_1/\\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(digits = 8) |> 
+  colformat_double(digits = 4) |> 
   mk_par(i = 1, part = "header", value = as_paragraph(as_equation(.,width = .1, height = .2)),use_dot = TRUE) |>  
   autofit()
 ```
@@ -232,7 +297,7 @@ _Reduciendo la varianza cinco veces $(\varepsilon\sim \mathcal{N}(0,0.005)$,los 
 ```{r}
 data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(digits = 8) |> 
+  colformat_double(digits = 4) |> 
   mk_par(i = 1, part = "header",
          value = as_paragraph(
            as_equation(.,width = .1, height = .2)),
@@ -264,7 +329,7 @@ _Aumentando la varianza cinco veces$(\varepsilon\sim \mathcal{N}(0,0.125)$,los e
 ```{r}
 data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b1) |> 
   flextable() |> 
-  colformat_double(digits = 8) |> 
+  colformat_double(digits = 4) |> 
   mk_par(i = 1, part = "header",
          value = as_paragraph(
            as_equation(.,width = .1, height = .2)),
@@ -274,11 +339,23 @@ data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b
 
 j) En ambos escenarios, hallar una estimación de la varianza. 
 
+```{r}
+#if(getOutputFormat() %in% c('html_document','bookdown::gitbook')) {
+if(knitr::is_html_output()){
+  
+   plotNoise()
+}
+
+
+```
+
+
+
 *XXX COMPLETAR XXX*
 
-### Ejercicio 5 {-}
+## Ejercicio 5 {-}
 
-  a) Generar el siguiente modelo: Crear dos vectores de datos  $x_1$ y $x_2$ de tamaño 100 con una distribución $X \sim\mathcal{U}(0,1)$  y crear un vector $y = 2 + 2 ∗ x_1 + 0,3 ∗ x_2 + \varepsilon$, con $\varepsilon$  que contenga 100 observaciones con una distribución $\varepsilon \sim\mathcal{N}(0,1)$. ¿Cuales son los coeficientes de regresión?. 
+  a) Generar el siguiente modelo: Crear dos vectores de datos  $x_1$ y $x_2$ de tamaño 100 con una distribución $X \sim\mathcal{U}(0,1)$  y crear un vector $y = 2 + 2 ∗ x_1 + 0,3 ∗ x_2 + \varepsilon$, con $\varepsilon$  que contenga 100 observaciones con una distribución $\varepsilon \sim\mathcal{N}(0,1)$. ¿Cuales son los coeficientes de regresión?. Estimar la correlación entre $x_1$ y $x_2$. Realizar un scatterplot en el que pueda observarse la relación entre $x_1$ y $x_2$.Utilizando los datos generados, ajustar a un modelo lineal para predecir y en función de $x_1$ y $x_2$ , utilizando el método de cuadrados mı́nimos y comparar los valores exactos de $\beta$  con sus valores estimados.
 
 ```{r echo=TRUE}
 X1 <- runif(n=100,min=0,max=1)
@@ -292,14 +369,14 @@ Y <- B0+B1*X1+B2*X2+e
 
 _Para el modelo propuesto, los coeficientes de regresión son $\beta_0=$ `r B0`, $\beta_1=$ `r B1` y $\beta_2=$ `r B2`_
 
-  c) Estimar la correlación entre $x_1$ y $x_2$
+_La función `cor()` permite estimar la correlación entre dos vectores que para este caso resulta `cor(X1,X2) =` `r cor(X1,X2)`. Los vectores $X_1$ y $X_2$ son realizaciones de una muestra aleatoria con distribución uniforme y no deberían tener ninguna correlación como se puede ver en el gráfico de dispersión._
 
-  d) Realizar un scatterplot en el que pueda observarse la relación entre $x_1$ y $x_2$
 ```{r }
 DT <- data.table(x1=X1,x2=X2)
 ggplot() + geom_point(data=DT, aes(x=x1, y=x2),color="blue")  + theme_bw()
 ```
-  e) Utilizando los datos generados, ajustar a un modelo lineal para predecir y en función de $x_1$ y $x_2$ , utilizando el método de cuadrados mı́nimos y comparar los valores exactos de $\beta$  con sus valores estimados.
+
+  e) 
 ```{r echo=TRUE}
 DT <- data.table(x1=X1,x2=X2,y=Y)
 MDL <- lm(data=DT,y~x1+x2)
