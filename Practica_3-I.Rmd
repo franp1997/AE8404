@@ -1,6 +1,6 @@
 ---
 subtitle: "Aprendizaje Estadístico -  (84:04)"
-author: 'Alejandro Verri Kozlowski'
+author: 'A. Verri Kozlowski y F. Patitucci'
 title: 'Práctica 3 - Parte I'
 output:
   pdf_document:
