@@ -14,7 +14,7 @@ output:
 ---
 
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE,echo=FALSE}
 # kmit options ----
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
@@ -139,6 +139,20 @@ set_flextable_defaults(
 
 Implementar una función que dado un vector `y` de valores de respuesta y una matriz `X` de valores observados, mediante las ecuaciones normales, calcule el estimador de cuadrados mínimos
 
+
+Se plantea el siguiente algoritmo para el cálculo del estimador de mínimos cuadrados
+```{r echo=TRUE}
+
+.getBeta <- function(Y=NULL,X=NULL){
+  
+  a <- (rep(1,length(y)))
+  x <- cbind(a,x)
+  beta_est <- solve(t(x)%*%x)%*%t(x)%*%y
+  return(beta_est)
+}
+
+```
+
 ## Ejercicio 2 {-}
 
 Se tiene en el archivo `girasol.txt` el rinde de diversas parcelas de girasol (en toneladas) según la
@@ -147,6 +161,37 @@ cantidad de dinero invertida en fertilizantes (en miles de pesos).
 a Graficar en un diagrama de dispersión inversión vs rinde.
 b. Plantear un modelo de regresión lineal simple obtener el estimador de mı́nimos cuadrados.
 c. Graficar la recta de regresión obtenida, ¿detecta algo sospechoso?
+
+
+
+Se realiza el grafico de dispersión
+
+```{r}
+DT <-fread(file=file.path("data","girasol.txt"))
+plot(a$inversion,a$rinde,grid(),main =  "Diagrama de dispersion",xlab = "Inversion", ylab = "Rinde")
+
+```
+
+Se realiza el cálculo y el grafico mediante la función beta calculada en el ejercicio 1
+
+```{r}
+a<-read.table("girasol.txt",header = TRUE )
+x<-a$inversion
+y<-a$rinde
+
+#x<-x[y>100]
+#y<-y[y>100]
+#model <- lm(y ~ x)
+
+est=Betas(y,x)
+plot(a$inversion,a$rinde,grid(),main =  "Diagrama de dispersion",xlab = "Inversion", ylab = "Rinde")
+abline(a =est[1] ,b = est[2] )
+
+```
+
+Se ve claramente que existen puntos (los cuales tuvieron rinde inferior a 100) que afectan la precisión de nuestro modelo
+
+
 
 ## Ejercicio 3 {-}
 
@@ -164,7 +209,38 @@ Considerar el archivo abalone.txt que contiene información sobre distintas mues
 
 a. Plantear un modelo de regresión lineal simple para predecir el diámetro en función de la longitud.
 
+
+Se plantea un modelo de regresión simple con la función generada en el Ejercicio 1, donde en este caso $x$ es la longitud del abalone y $y$ es el diámetro del mismo.
+
+```{r echo=FALSE}
+a<-read.csv("abalone.txt",sep = ",",col.names = c("sexo","long","diam","alt","peso_comp","peso_car","peso_vis","peso_cap","anillos") )
+est <- Betas(a$diam,a$long)
+
+sp <- ggplot(data=a)+   geom_point(aes(x=long, y=diam, color= "Data")) +  labs(title="",       x="Longitud",      y = "Diametro")
+sp +  geom_abline(mapping = aes(intercept = est[1], slope = est[2], color = "Modelo lineal simple"))+
+   scale_colour_manual(values = c("Data"= "lightblue",
+                                  "Modelo lineal simple" = "orangered4"))
+
+```
+
+
+
+
 b. Observar que el conjunto de datos tiene información del peso total de cada espécimen junto con un desagregado por partes. Ajustar un modelo de regresión múltiple que explique el peso total en función del peso del caparazón, las vı́sceras y la carne.
+
+
+En este caso, igual que en el inciso anterior se utilizó la función definida en el ejercicio 1 con la diferencia que $x$ es la unión de las columnas del peso del caparazón, las vísceras y la carne y $y$ es el peso total. En los resultados se ve el valor de la constante $\beta_0$ (primer valor), $\beta_1$ (pendiente asociada al peso del caparazón), $\beta_2$ (pendiente asociada al peso de las vísceras) y $\beta_3$ (pendiente asociada al peso de la carne).
+
+```{r echo=TRUE}
+
+x <- cbind(a$peso_cap,a$peso_vis,a$peso_car)
+y <- a$peso_comp
+est <- Betas(y,x)
+est
+
+```
+
+
 
 c. Se trata ahora de establecer una relación entre el peso total y el diámetro del espécimen. Empezar dibujando en un scatter plot ambas variables. Si definimos como `P` al peso total y `D` al diámetro, se consideran los siguientes modelos:
 
@@ -175,6 +251,66 @@ c. Se trata ahora de establecer una relación entre el peso total y el diámetro
 - Modelo cubico sin términos de orden inferior, $P = a\.D^3 + $\varepsilon$
 
 Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
+
+De igual manera que en los incisos anteriores se utilizó la función beta para calcular las con las siguientes consideraciones para cada caso.
+
+-   Modelo lineal simple, $P = b + aD + \varepsilon$
+
+Para este caso las entradas fueron $x$ diámetro de caparazón e $y$ peso total
+
+-   Modelo cuadrático, $P = c + bD + aD^2 + \varepsilon$
+
+Para este caso las entradas fueron $x$ la unión de las columnas diámetro de caparazón y diámetro de caparazón al cuadrado e $y$ peso total
+
+-   Modelo cubico sin términos de orden inferior, $P = aD^3 + \varepsilon$
+
+Para este caso las entradas fueron $x$ diámetro de caparazón al cubo e $y$ peso total
+
+
+```{r echo=FALSE}
+#library(tidyverse)
+# Caso 1 ------------------
+x <- a$diam
+y <- a$peso_comp
+est1 <- Betas(y,x)
+
+# Caso 2 ------------------
+x <- cbind(a$diam,a$diam^2)
+y <- a$peso_comp
+est2 <- Betas(y,x)
+
+
+xx <- a$diam
+y2 <- est2[1]+est2[2]*xx+est2[3]*xx^2
+
+# Caso 3 ------------------
+x <-a$diam^3
+y <- a$peso_comp
+est3 <- solve(t(x)%*%x)%*%t(x)%*%y
+
+y3 <- est3[1]*xx^3
+
+df <- data.frame(a$diam,a$peso_comp,y2,3)
+
+ggplot(data = df) + 
+  geom_point(mapping = aes(x = a$diam, y = a$peso_comp, color = "Data"))+
+  geom_smooth(mapping = aes(x = a$diam, y = y3, colour = "Modelo cubico "))+
+  geom_smooth(mapping = aes(x = a$diam, y = y2, colour = "Modelo cuadrático"))+
+  geom_abline(mapping = aes(intercept = est1[1], slope = est1[2], colour= "Modelo lineal simple"))+ggtitle("Curvas") +
+  xlab("Diámetro") +
+  ylab("Peso total")+
+   scale_colour_manual(values = c("Data"= "lightblue",
+                                  "Modelo lineal simple" = "orangered4",
+                                  "Modelo cuadrático"= "midnightblue",
+                                  "Modelo cubico " = "green4"))+
+  theme_linedraw()
+
+
+
+```
+
+
+
 
 
 ## Ejercicio 4 {-}
