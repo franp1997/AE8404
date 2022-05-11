@@ -4,17 +4,23 @@ author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
   pdf_document:
-    toc: no
+    toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
   html_document:
-    toc: no
+    toc: yes
     df_print: paged
 ---
 
 
-```{r setup, include=TRUE,echo=FALSE}
+```{r setup, include=FALSE,echo=FALSE}
+# lib ----
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(data.table) # data,frame extendido
+library(ggthemes) 
+library(flextable) # Plot Tables
 # kmit options ----
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
@@ -36,12 +42,7 @@ getOutputFormat <- function() {
 }
 
 
-# lib ----
-knitr::opts_chunk$set(echo = TRUE)
-library(ggplot2)
-library(data.table) # data,frame extendido
-library(ggthemes) 
-library(flextable) # Plot Tables
+
 
 # rnd  
 set.seed(25111970)
@@ -49,11 +50,8 @@ set.seed(25111970)
 
 # shiny ----
 plotNoise = function() {
-
   library(shiny)  
-  
   shinyApp(
-    
     ui = fluidPage(
       fluidRow(style = "padding-bottom: 20px;",
         column(width=2, 
@@ -67,7 +65,6 @@ plotNoise = function() {
         plotOutput('noise', height = "300px")  
       )
     ),
-
     server = function(input, output, session) {
       output$noise = renderPlot(height = 400, {
         req(input$log10SD,input$n)
@@ -89,7 +86,6 @@ plotNoise = function() {
         return(OUT)
       })
     },
-
     options = list(height = 400)
   )
 }
@@ -137,20 +133,29 @@ set_flextable_defaults(
 
 ## Ejercicio 1 {-}
 
-Implementar una función que dado un vector `y` de valores de respuesta y una matriz `X` de valores observados, mediante las ecuaciones normales, calcule el estimador de cuadrados mínimos
+Implementar una función que dado un vector `y` de valores de respuesta y una matriz `x` de valores observados, mediante las ecuaciones normales, calcule el estimador de cuadrados mínimos
 
 
-Se plantea el siguiente algoritmo para el cálculo del estimador de mínimos cuadrados
+_Se plantea el siguiente algoritmo para el cálculo del estimador de mínimos cuadrados,que toma como argumentos un vector 'y' y una matriz o vector columna 'x', y devuelve una tabla de coeficientes 'b0,b1,...'_
+
 ```{r echo=TRUE}
-
-.getBeta <- function(Y=NULL,X=NULL){
-  
-  a <- (rep(1,length(y)))
-  x <- cbind(a,x)
-  beta_est <- solve(t(x)%*%x)%*%t(x)%*%y
-  return(beta_est)
+Coeff <- function(data=NULL,y,x=NULL){
+  if(!is.null(data) & is.character(y)){ 
+    Y <- data[[y]] 
+    XCOLS <- colnames(data)[colnames(data)!=y]
+    x <- data[,..XCOLS] |> as.matrix()
+  } 
+  if(is.null(data) & !is.null(x) & is.vector(y)){ 
+    Y <- y
+    if(!is.matrix(x)){x <- as.matrix(x)}
+  } 
+  X <- cbind(1,x)
+  B <- solve(t(X)%*%X)%*%t(X)%*%Y |> t() |> as.data.table()
+  p <- ncol(x)
+  ID <- paste0("b",seq(0,p)) #b0,b1,..bp
+  setnames(B,new=ID)
+  return(B)
 }
-
 ```
 
 ## Ejercicio 2 {-}
@@ -158,44 +163,43 @@ Se plantea el siguiente algoritmo para el cálculo del estimador de mínimos cua
 Se tiene en el archivo `girasol.txt` el rinde de diversas parcelas de girasol (en toneladas) según la
 cantidad de dinero invertida en fertilizantes (en miles de pesos).
 
+
+
 a Graficar en un diagrama de dispersión inversión vs rinde.
 b. Plantear un modelo de regresión lineal simple obtener el estimador de mı́nimos cuadrados.
 c. Graficar la recta de regresión obtenida, ¿detecta algo sospechoso?
 
-
-
-Se realiza el grafico de dispersión
+_El modelo de regresion lineal se obtiene a partir de la función 'Coeff()' definida en el ejercicio 1, La figura siguiente muestra el gráfico de dispersión de los puntos y la recta de ajuste_
 
 ```{r}
 DT <-fread(file=file.path("data","girasol.txt"))
-plot(a$inversion,a$rinde,grid(),main =  "Diagrama de dispersion",xlab = "Inversion", ylab = "Rinde")
-
+COEFF <- Coeff(data=DT,y="rinde")
+ggplot(data=DT) +
+  geom_point(mapping =aes(x=inversion, y=rinde),color="blue") +
+  labs(title="Diagrama de dispersion",x="Inversion",y = "Rinde") +
+  geom_abline(mapping = aes(intercept = COEFF$b0, slope = COEFF$b1),color = "red")+
+  theme_bw()
 ```
 
-Se realiza el cálculo y el grafico mediante la función beta calculada en el ejercicio 1
+_Se puede observar que hay `r nrow(DT[rinde==5.0])` observaciones con un valor fijo `(rinde=5)` que está muy lejos del promedio en el resto de las observaciones, y atraen a la recta de ajuste. Si se asumen como "outliers" y se excluyen estas observaciones, los estimadores ajustan mejor por el promedio_
 
 ```{r}
-a<-read.table("girasol.txt",header = TRUE )
-x<-a$inversion
-y<-a$rinde
+COEFF <- Coeff(data=DT[rinde!=5.0],y="rinde")
+# 
+# ggplot(data=DT,aes(x=rinde )) + geom_boxplot(notch=FALSE,color="blue")+
+#   theme_bw()
 
-#x<-x[y>100]
-#y<-y[y>100]
-#model <- lm(y ~ x)
-
-est=Betas(y,x)
-plot(a$inversion,a$rinde,grid(),main =  "Diagrama de dispersion",xlab = "Inversion", ylab = "Rinde")
-abline(a =est[1] ,b = est[2] )
-
+ggplot(data=DT) +
+  geom_point(mapping =aes(x=inversion, y=rinde),color="blue") +
+  labs(title="Diagrama de dispersión",x="Inversión",y = "Rinde") +
+  geom_abline(mapping = aes(intercept =COEFF$b0, slope = COEFF$b1),color = "red")+
+  theme_bw()
+  
 ```
-
-Se ve claramente que existen puntos (los cuales tuvieron rinde inferior a 100) que afectan la precisión de nuestro modelo
-
-
 
 ## Ejercicio 3 {-}
 
-Considerar el archivo abalone.txt que contiene información sobre distintas muestras de abalones. Los atributos están separados por coma, con los siguientes campos: 
+Considerar el archivo `abalone.txt` que contiene información sobre distintas muestras de abalones. Los atributos están separados por coma, con los siguientes campos: 
 
 - Sexo (categórica): M (masculino), F (femenino) o I (infante).
 - Longitud (continua), en milimetros.
@@ -207,111 +211,73 @@ Considerar el archivo abalone.txt que contiene información sobre distintas mues
 - Peso del caparazón (continua), en gramos.
 - Anillos (discreta).
 
-a. Plantear un modelo de regresión lineal simple para predecir el diámetro en función de la longitud.
+  a. Plantear un modelo de regresión lineal simple para predecir el diámetro `D` en función de la longitud `L`.
 
 
-Se plantea un modelo de regresión simple con la función generada en el Ejercicio 1, donde en este caso $x$ es la longitud del abalone y $y$ es el diámetro del mismo.
+_Se plantea un modelo de regresión simple con la función 'Coeff()', donde en este caso $x$ es la longitud del abalone y $y$ es el diámetro del mismo._
 
 ```{r echo=FALSE}
-a<-read.csv("abalone.txt",sep = ",",col.names = c("sexo","long","diam","alt","peso_comp","peso_car","peso_vis","peso_cap","anillos") )
-est <- Betas(a$diam,a$long)
+DT <- fread(
+  file=file.path("data","abalone.txt"),
+  col.names = c("S","L","D","H","P","P_carne","P_visceras","P_caparazon","anillos"))
 
-sp <- ggplot(data=a)+   geom_point(aes(x=long, y=diam, color= "Data")) +  labs(title="",       x="Longitud",      y = "Diametro")
-sp +  geom_abline(mapping = aes(intercept = est[1], slope = est[2], color = "Modelo lineal simple"))+
-   scale_colour_manual(values = c("Data"= "lightblue",
-                                  "Modelo lineal simple" = "orangered4"))
+COEFF <- Coeff(y=DT$D,x=DT$L)
+ggplot(data=DT) +   
+  geom_point(aes(x=L, y=D),color= "lightblue") +  
+  labs(title="",x="Longitud",y = "Diametro") +
+  geom_abline(mapping = aes(intercept = COEFF$b0, slope = COEFF$b1),color = "orangered4")+
+  theme_bw()
 
 ```
 
-
-
-
-b. Observar que el conjunto de datos tiene información del peso total de cada espécimen junto con un desagregado por partes. Ajustar un modelo de regresión múltiple que explique el peso total en función del peso del caparazón, las vı́sceras y la carne.
-
-
-En este caso, igual que en el inciso anterior se utilizó la función definida en el ejercicio 1 con la diferencia que $x$ es la unión de las columnas del peso del caparazón, las vísceras y la carne y $y$ es el peso total. En los resultados se ve el valor de la constante $\beta_0$ (primer valor), $\beta_1$ (pendiente asociada al peso del caparazón), $\beta_2$ (pendiente asociada al peso de las vísceras) y $\beta_3$ (pendiente asociada al peso de la carne).
+  b. Observar que el conjunto de datos tiene información del peso total de cada espécimen junto con un desagregado por partes. Ajustar un modelo de regresión múltiple que explique el peso total `P` en función del peso del caparazón `P_caparazon`, las vı́sceras `P_visceras` y la carne `P_carne` .
 
 ```{r echo=TRUE}
-
-x <- cbind(a$peso_cap,a$peso_vis,a$peso_car)
-y <- a$peso_comp
-est <- Betas(y,x)
-est
-
+COEFF <- Coeff(data=DT[,c("P","P_caparazon","P_visceras","P_carne")],y="P")
 ```
+_En este caso, igual que en el inciso anterior se utilizó la función 'Coeff()', seleccionando del dataset unicamente `P_caparazon`s `P_visceras` y `P_carne` como variables dependientes. Los estimadores del modelo resultaron  $\hat\beta_0=$ `r COEFF$b0`(primer valor), $\hat\beta_1=$ `r COEFF$b1`(pendiente asociada al peso del caparazón), $\hat\beta_2=$ `r COEFF$b2`(pendiente asociada al peso de las vísceras) y $\hat\beta_3=$ `r COEFF$b3` (pendiente asociada al peso de la carne)._
 
 
-
-c. Se trata ahora de establecer una relación entre el peso total y el diámetro del espécimen. Empezar dibujando en un scatter plot ambas variables. Si definimos como `P` al peso total y `D` al diámetro, se consideran los siguientes modelos:
+  c. Se trata ahora de establecer una relación entre el peso total `P` y el diámetro del espécimen `D`. Empezar dibujando en un scatter plot ambas variables. Si definimos como `P` al peso total y `D` al diámetro, se consideran los siguientes modelos:
 
 - Modelo lineal simple, $P = b + a\.D + \varepsilon$
-
 - Modelo cuadrático, $P = c + b\.D + a\.D^2 + \varepsilon$
+- Modelo cúbico sin términos de orden inferior, $P = a\.D^3 + $\varepsilon$
 
-- Modelo cubico sin términos de orden inferior, $P = a\.D^3 + $\varepsilon$
+  Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
 
-Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
+De igual manera que en los incisos anteriores se utilizó la función `Coeff()` para obtener los estimadores de cada uno de los casos. Para el modelo lineal simple, $\hat{P} = \hat{\beta_0} + \hat{\beta_1} D$, donde $P$ es el peso completo del abalone y $D$ es el diámetro
 
-De igual manera que en los incisos anteriores se utilizó la función beta para calcular las con las siguientes consideraciones para cada caso.
-
--   Modelo lineal simple, $P = b + aD + \varepsilon$
-
-Para este caso las entradas fueron $x$ diámetro de caparazón e $y$ peso total
-
--   Modelo cuadrático, $P = c + bD + aD^2 + \varepsilon$
-
-Para este caso las entradas fueron $x$ la unión de las columnas diámetro de caparazón y diámetro de caparazón al cuadrado e $y$ peso total
-
--   Modelo cubico sin términos de orden inferior, $P = aD^3 + \varepsilon$
-
-Para este caso las entradas fueron $x$ diámetro de caparazón al cubo e $y$ peso total
-
-
-```{r echo=FALSE}
-#library(tidyverse)
-# Caso 1 ------------------
-x <- a$diam
-y <- a$peso_comp
-est1 <- Betas(y,x)
-
-# Caso 2 ------------------
-x <- cbind(a$diam,a$diam^2)
-y <- a$peso_comp
-est2 <- Betas(y,x)
-
-
-xx <- a$diam
-y2 <- est2[1]+est2[2]*xx+est2[3]*xx^2
-
-# Caso 3 ------------------
-x <-a$diam^3
-y <- a$peso_comp
-est3 <- solve(t(x)%*%x)%*%t(x)%*%y
-
-y3 <- est3[1]*xx^3
-
-df <- data.frame(a$diam,a$peso_comp,y2,3)
-
-ggplot(data = df) + 
-  geom_point(mapping = aes(x = a$diam, y = a$peso_comp, color = "Data"))+
-  geom_smooth(mapping = aes(x = a$diam, y = y3, colour = "Modelo cubico "))+
-  geom_smooth(mapping = aes(x = a$diam, y = y2, colour = "Modelo cuadrático"))+
-  geom_abline(mapping = aes(intercept = est1[1], slope = est1[2], colour= "Modelo lineal simple"))+ggtitle("Curvas") +
-  xlab("Diámetro") +
-  ylab("Peso total")+
-   scale_colour_manual(values = c("Data"= "lightblue",
-                                  "Modelo lineal simple" = "orangered4",
-                                  "Modelo cuadrático"= "midnightblue",
-                                  "Modelo cubico " = "green4"))+
-  theme_linedraw()
-
-
-
+```{r echo=TRUE}
+DATA <- DT[,.(P=P,x1=D)]
+M1 <- Coeff(data=DATA,y="P")
+P1 <- DT[,.(x=D,y=M1$b0+M1$b1*D)] #Predictor
 ```
 
+_Para el modelo cuadrático,  el estimador adoptado fue $\hat{P} = \hat{\beta_0} + \hat{\beta_1} D+\hat{\beta_2} D^2$_ 
+```{r echo=TRUE}
+DATA <- DT[,.(P=P,x1=D,x2=D^2)]
+M2 <- Coeff(data=DATA,y="P")
+P2 <- DT[,.(x=D,y=M2$b0+M2$b1*D+M2$b2*D^2)] #Predictor
+```
 
+_Para el modelo cúbico incompleto el estimador adoptado fue $\hat{P} = \hat{\beta_0} + \hat{\beta_1} D^3$_ 
 
-
+```{r echo=TRUE}
+DATA <- DT[,.(P=P,x1=D^3)]
+M3 <- Coeff(data=DATA,y="P")
+P3  <- DT[,.(x=D,y=M3$b0+M3$b1*D^3)] #Predictor
+```
+```{r}
+ggplot() +   
+  geom_point(data=DT[,.(P,D)],aes(x=D, y=P),color= "red") +  
+  labs(title="",y="Peso",x = "Diametro") +
+  geom_line(data=P1,aes(x=x,y=y,color = "Lineal (M1)"))+
+  geom_line(data=P2,aes(x=x,y=y,color = "Cuadrático (M2)"))+
+  geom_line(data=P3,aes(x=x,y=y,color = "Cúbico (M3)"))+
+  scale_colour_manual(values = c("Lineal (M1)" = "orangered1","Cuadrático (M2)" = "orangered3","Cúbico (M3)" = "orangered4"))+
+  theme_bw()
+```
 
 ## Ejercicio 4 {-}
 En este ejercicio se crearán datos simulados y se ajustará un modelo de regresión lineal simple.
@@ -360,7 +326,10 @@ DTP <- data.table(x=X,y=b0+b1*X) #Predictor
 B0 <- -1
 B1 <- 0.5
 
-ggplot() + geom_point(data=DT, aes(x=x, y=y),color="tomato") + geom_line(data=DTP,aes(x=x, y=y),color="red")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+ggplot() + 
+  geom_point(data=DT, aes(x=x, y=y),color="tomato") + 
+  geom_line(data=DTP,aes(x=x, y=y),color="red")+ 
+  geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
 ```
 _Las lineas son prácticamente idénticas y no hay manera de diferenciarlas, tal como se vio en la comparación de los coeficientes_
 
@@ -511,22 +480,27 @@ Y <- B0+B1*X1+B2*X2+e
 
 _En este ejemplo sólo el vector $X_1$ es una realización "pura" de una muestra aleatoria con distribución normal y el vector $X_2$ se genera como una combinación lineal de $X_1$ pero incluye un ruido aleatorio del 10% de la varianza de $X_1$, con lo cual la  correlación entre ambos resulta ahora más alta `cor(X1,X2)=` `r cor(X1,X2)`_
 
-```{r }
-DT <- data.table(x1=X1,x2=X2)
-ggplot() + geom_point(data=DT, aes(x=x1, y=x2),color="blue")  + theme_bw()
-```
 
+```{r }
+DT <- data.table(x1=X1,x2=X2,y=Y)
+ggplot(data=DT) +
+  geom_point( aes(x=X1, y=X2),color="blue") +  theme_bw()
+```
 ```{r echo=TRUE}
 DT <- data.table(x1=X1,x2=X2,y=Y)
 MDL <- lm(data=DT,y~x1+x2)
 b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x1"]
 b2 <- MDL$coefficients["x2"]
-SUM <- data.table("\\beta_0 / \\hat{\\beta_0}"=B0/b0,"\\beta_1 / \\hat{\\beta_1}"=B1/b1,"\\beta_2 / \\hat{\\beta_2}"=B2/b2)
+
 ```
-_Los estimadores de los oeficientes de regresión del modelo, resultan ahora en en $\hat{\beta_0}=$ `r b0`,$\hat{\beta_0}=$ `r b1` y $\hat{\beta_0}=$ `r b2`_
+_Los estimadores de los coeficientes de regresión del modelo, resultan ahora en $\hat{\beta_0}=$ `r b0`,$\hat{\beta_1}=$ `r b1` y $\hat{\beta_2}=$ `r b2`_
+
 
 ```{r}
+SUM <- data.table("\\beta_0 / \\hat{\\beta_0}"=B0/b0,"\\beta_1 / \\hat{\\beta_1}"=B1/b1,"\\beta_2 / \\hat{\\beta_2}"=B2/b2)
   flextable(SUM) |>  colformat_double(digits = 4) |> 
   mk_par(part = "header", value = as_paragraph(as_equation(.)),use_dot = TRUE) |>    autofit()
 ```
+
+
