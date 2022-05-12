@@ -3,14 +3,14 @@ title: "Práctica 3 - Parte I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
-  html_document:
-    toc: yes
-    df_print: paged
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
+  html_document:
+    toc: yes
+    df_print: paged
 ---
 
 
@@ -21,7 +21,7 @@ library(ggplot2)
 library(data.table) # data,frame extendido
 library(ggthemes) 
 library(flextable) # Plot Tables
-# kmit options ----
+# knit options ----
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
@@ -139,7 +139,7 @@ Implementar una función que dado un vector `y` de valores de respuesta y una ma
 _Se plantea el siguiente algoritmo para el cálculo del estimador de mínimos cuadrados,que toma como argumentos un vector 'y' y una matriz o vector columna 'x', y devuelve una tabla de coeficientes 'b0,b1,...'_
 
 ```{r echo=TRUE}
-Coeff <- function(data=NULL,y,x=NULL){
+Coeff <- function(data=NULL,y,x=NULL,intercept=TRUE){
   if(!is.null(data) & is.character(y)){ 
     Y <- data[[y]] 
     XCOLS <- colnames(data)[colnames(data)!=y]
@@ -149,10 +149,14 @@ Coeff <- function(data=NULL,y,x=NULL){
     Y <- y
     if(!is.matrix(x)){x <- as.matrix(x)}
   } 
-  X <- cbind(1,x)
+  if(intercept) {X <- cbind(1,x)} else {X <- x}
   B <- solve(t(X)%*%X)%*%t(X)%*%Y |> t() |> as.data.table()
   p <- ncol(x)
-  ID <- paste0("b",seq(0,p)) #b0,b1,..bp
+  if(intercept){
+    #b0,b1,..bp
+    ID <- paste0("b",seq(0,p))} 
+  else {
+    ID <- paste0("b",seq(1,p))}
   setnames(B,new=ID)
   return(B)
 }
@@ -261,12 +265,12 @@ M2 <- Coeff(data=DATA,y="P")
 P2 <- DT[,.(x=D,y=M2$b0+M2$b1*D+M2$b2*D^2)] #Predictor
 ```
 
-_Para el modelo cúbico incompleto el estimador adoptado fue $\hat{P} = \hat{\beta_0} + \hat{\beta_1} D^3$_ 
+_Para el modelo cúbico incompleto el estimador adoptado fue $\hat{P} = \hat{\beta_0} + \hat{\beta_1} D^3$. En este caso no podemos usar el algoritmo `Coeff()` con sus parámetros por defecto, sino que debemos especificar que el término independiente es nulo mediante el parámetro `intercept=FALSE`_ 
 
 ```{r echo=TRUE}
 DATA <- DT[,.(P=P,x1=D^3)]
-M3 <- Coeff(data=DATA,y="P")
-P3  <- DT[,.(x=D,y=M3$b0+M3$b1*D^3)] #Predictor
+M3 <- Coeff(data=DATA,y="P",intercept=FALSE)
+P3  <- DT[,.(x=D,y=M3$b1*D^3)] #Predictor
 ```
 ```{r}
 ggplot() +   
@@ -303,10 +307,15 @@ ggplot(data=DT, aes(x=x, y=y)) + geom_point(color="tomato") + theme_bw()
 e) Ajustar un modelo lineal para predecir y en función de x utilizando el método de cuadrados mı́nimos.
 
 ```{r echo=TRUE}
-DT <- data.table(x=X,y=Y)
-MDL <- lm(data=DT,y~x)
-b0 <- MDL$coefficients["(Intercept)"]
-b1 <- MDL$coefficients["x"]
+# DT <- data.table(x=X,y=Y)
+# MDL <- lm(data=DT,y~x)
+COEFF <- Coeff(x=X,y=Y)
+# b0 <- MDL$coefficients["(Intercept)"]
+# b1 <- MDL$coefficients["x"]
+b0 <- COEFF$b0
+b1 <- COEFF$b1
+
+
 ```
 
 Comparar los valores exactos de $\beta_0$ Y $\beta_1$ con sus estimaciones. 
@@ -316,8 +325,22 @@ data.table("\\beta_0 / \\hat{\\beta_0}"=-1/b0,"\\beta_1 / \\hat{\\beta_1}"=0.5/b
   mk_par(part = "header", value = as_paragraph(as_equation(.)),use_dot = TRUE) |>    autofit()
 ```
  
-_Los estimadores de $\beta_0$ y $\beta_1$ resultaron $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1`, respectivamente_
-  
+_Los estimadores de $\beta_0$ y $\beta_1$ resultaron $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1`, respectivamente. La varianza del modelo $\sigma^2$ en este caso es conocida y es igual a $\sigma^2=var[\varepsilon]=$ `var(e)=` `r var(e)`._ 
+
+
+_El estimador de la varianza $s^2$ se define como:_
+
+$$s^2 = \frac{RSS} {n-2}=\frac{\sum{(y_i-\hat{\beta_0}-\hat{\beta_1} x_i)^2}} {n-2}$$
+```{r echo=TRUE}
+y <- b0+b1*X
+Y <- -1+0.5*X+e
+n <- length(Y) #100
+RSS <- t(Y-y)%*%(Y-y)
+s2 <- (RSS/(n-2)) 
+```
+
+_y resulta igual a $s^2\approx$ `r s2`._
+
 f) Graficar la recta de cuadrados mı́nimos sobre el gráfico realizado en (d). En otro color graficar la recta $Y = −1 + 0,5X$
 
 ```{r }
@@ -334,7 +357,7 @@ ggplot() +
 _Las lineas son prácticamente idénticas y no hay manera de diferenciarlas, tal como se vio en la comparación de los coeficientes_
 
 
-g) Ajustar un modelo polinomial que prediga y usando $x$ y $x^2$ . 
+g) Ajustar un modelo polinomial que prediga $y$ usando $x$ y $x^2$ . 
 
 ```{r echo=TRUE}
 DT <- data.table(y=Y,x1=X,x2=X^2)
@@ -355,7 +378,7 @@ data.table("\\beta_0/\\hat{\\beta_0}"=B0/b0,"\\beta_1/\\hat{\\beta_1}"=B1/b1) |>
 
   ¿Encuentra alguna evidencia de que el término cuadrático mejora el ajuste del modelo? 
 
-_No, los estimadores $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` prácticamente no difieren de los anteriores. _
+_No, los estimadores $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` prácticamente no difieren de los anteriores._
 
 h) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que haya menos ruido en los datos. Una forma de hacerlo es disminuyendo el valor de la varianza de la distribución normal usada para general el término del error epsilon. 
 
@@ -363,10 +386,14 @@ h) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que 
 e <- rnorm(n=100,mean=0,sd=0.025/5)
 Y <- -1 + 0.5*X + e
 DT <- data.table(x=X,y=Y)
-MDL <- lm(data=DT,y~1+x)
+MDL <- lm(data=DT,y~x)
 b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x"]
-DTP <- data.table(x=X,y=b0+b1*X)
+
+y <- b0 + b1*X 
+DTP <- data.table(x=X,y=y)
+RSS <- t(Y-y)%*%(Y-y)
+s2 <- (RSS/(n-2))
 
 ```
 
@@ -376,7 +403,7 @@ if(knitr::is_latex_output()){
 }
 ```
 
-_Reduciendo la varianza cinco veces $(\varepsilon\sim \mathcal{N}(0,0.005)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
+_Reduciendo la varianza cinco veces $(\varepsilon\sim \mathcal{N}(0,0.005)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente En este caso, la varianza $\sigma$ resulta igual a $\sigma^2 \approx$ `r var(e)` y su estimador resulta igual a $s^2 \approx$ `r s2`_ 
 
 
 ```{r}
@@ -390,13 +417,18 @@ i) Repetir los ı́tems (a) a (f) modificando los datos generados de manera que 
 
 
 ```{r }
-e <- rnorm(n=100,mean=0,sd=0.25)
-Y <- -1 + 0.5*X + 10*e
+e <- rnorm(n=100,mean=0,sd=0.025*10)
+Y <- -1 + 0.5*X + e
 DT <- data.table(x=X,y=Y)
-MDL <- lm(data=DT,y~1+x)
+MDL <- lm(data=DT,y~x)
 b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x"]
 DTP <- data.table(x=X,y=b0+b1*X)
+
+y <- b0 + b1*X 
+DTP <- data.table(x=X,y=y)
+RSS <- t(Y-y)%*%(Y-y)
+s2 <- (RSS/(n-2))
 ```
 
 ```{r}
@@ -405,7 +437,7 @@ if(knitr::is_latex_output()){
 }
 ```
 
-_Aumentando la varianza cinco veces$(\varepsilon\sim \mathcal{N}(0,0.125)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
+_Aumentando la varianza de $X$ diez veces$(\varepsilon\sim \mathcal{N}(0,0.25)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente. En este caso, la varianza resulta igual a $\sigma^2 \approx$ `r var(e)` y su estimador resulta igual a $s^2 \approx$ `r s2`_ 
 
 ```{r}
 data.table("\\beta_0 / \\hat{\\beta_0}"=B0/b0,"\\beta_1 / \\hat{\\beta_1}"=B1/b1) |> 
@@ -413,13 +445,14 @@ data.table("\\beta_0 / \\hat{\\beta_0}"=B0/b0,"\\beta_1 / \\hat{\\beta_1}"=B1/b1
   mk_par(part = "header", value = as_paragraph(as_equation(.)),use_dot = TRUE) |>    autofit()
 ```
 
-j) En ambos escenarios, hallar una estimación de la varianza. 
-
 ```{r}
 if(knitr::is_html_output()){
    plotNoise()
 } 
 ```
+
+j) En ambos escenarios, hallar una estimación de la varianza. 
+
 
 
 ## Ejercicio 5 {-}
@@ -463,6 +496,7 @@ SUM <- data.table("\\beta_0 / \\hat{\\beta_0}"=B0/b0,"\\beta_1 / \\hat{\\beta_1}
 _La regresión mediante cuadrados mínimos se efectúa mediante el paquete 'lm()' y los estimadores de los oeficientes de regresión del modelo, resultan en $\hat{\beta_0}=$ `r b0`,$\hat{\beta_0}=$ `r b1` y $\hat{\beta_0}=$ `r b2`_
 
 Comparar los valores exactos de $\beta_0$ Y $\beta_1$ con sus estimaciones. 
+
 ```{r}
   flextable(SUM) |>  colformat_double(digits = 4) |> 
   mk_par(part = "header", value = as_paragraph(as_equation(.)),use_dot = TRUE) |>    autofit()
