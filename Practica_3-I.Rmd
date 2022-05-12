@@ -3,14 +3,14 @@ title: "Práctica 3 - Parte I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
+  html_document:
+    toc: yes
+    df_print: paged
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
-  html_document:
-    toc: yes
-    df_print: paged
 ---
 
 
@@ -367,9 +367,14 @@ MDL <- lm(data=DT,y~1+x)
 b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x"]
 DTP <- data.table(x=X,y=b0+b1*X)
-ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+
 ```
 
+```{r}
+if(knitr::is_latex_output()){
+  ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+}
+```
 
 _Reduciendo la varianza cinco veces $(\varepsilon\sim \mathcal{N}(0,0.005)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
 
@@ -392,11 +397,13 @@ MDL <- lm(data=DT,y~1+x)
 b0 <- MDL$coefficients["(Intercept)"]
 b1 <- MDL$coefficients["x"]
 DTP <- data.table(x=X,y=b0+b1*X)
-
-
-ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
 ```
 
+```{r}
+if(knitr::is_latex_output()){
+  ggplot() + geom_point(data=DT, aes(x=x, y=y),color="plum") + geom_line(data=DTP,aes(x=x, y=y),color="salmon")+ geom_abline(intercept = B0,slope = B1,color="blue") + theme_bw()
+}
+```
 
 _Aumentando la varianza cinco veces$(\varepsilon\sim \mathcal{N}(0,0.125)$,los estimadores de $\beta_0$ y $\beta_1$ ahora resultan en  $\hat{\beta_0}\approx$ `r b0` y $\hat{\beta_1}\approx$ `r b1` respectivamente _
 
