@@ -1,0 +1,117 @@
+---
+subtitle: "Aprendizaje Estadístico -  (84:04)"
+author: 'Alejandro Verri Kozlowski'
+title: 'Práctica Regresión'
+output:
+  bookdown::gitbook: 
+    number_sections: no
+  pdf_document:
+    toc: no
+    number_sections: yes
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+# lib ----
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(GGally)
+library(data.table) # data,frame extendido
+library(ggthemes) 
+library(flextable) # Plot Tables
+# knit options ----
+knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+
+# out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+getOutputFormat <- function() {
+  output <- rmarkdown:::parse_yaml_front_matter(
+    readLines(knitr::current_input())
+    )$output
+  if (is.list(output)){
+    return(names(output)[1])
+  } else {
+    return(output[1])
+  }
+}
+
+
+
+
+# rnd  
+set.seed(25111970)
+
+
+```
+
+El dataset `diabetes2.csv` es original del National Institute of Diabetes and Digestive and Kidney Disea-
+ses. Se creó con el objetivo de predecir si un paciente tiene o no diabetes, basado en diferentes medidas
+contenidas en el dataset. En particular, todos los pacientes son de sexo femenino mayores de 21 años de
+herencia Pima. Para este primer estudio, lo que buscaremos es encontrar relaciones entre otras de las va-
+riables contenidas en el dataset.
+
+### Ejercicio 
+Cargar los datos de `diabetes2.csv`. La variable `Outcome` indica si la persona es diabética (1) o no (0). Transformarla en un factor. Finalmente revisar que todas las variables contenidas en el dataframe
+estén correctamente definidas.
+
+```{r echo=TRUE}
+DT <-fread(file=file.path("data","diabetes2.csv"))
+DT[,V1:=NULL]
+setnames(DT,old=c("Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","DiabetesPedigreeFunction","Age", "Outcome"),new=c("P","G","BP","ST","I","DPf","A", "O"))
+DM <- as.matrix(DT)
+DT[,O:=as.factor(O)]
+```
+
+### Ejercicio
+Se desea ajustar un modelo de regresión múltiple para predecir la variable BMI en función del resto de las variables en el data set. Escribir el modelo propuesto, indicando los supuestos del mismo.
+
+
+### Ejercicio
+Realizar un scatterplot de las variables con la función ggpairs.
+
+```{r echo=TRUE}
+PLOT <- ggpairs(data=DT, mapping = aes(colour = O, alpha = 0.5))
+# for(i in 1:PLOT$nrow) {
+#   for(j in 1:PLOT$ncol){
+#     PLOT[i,j] <- PLOT[i,j] + 
+#         scale_fill_manual(values=c("red", "blue", "green", "yellow", "black")) +
+#         scale_color_manual(values=c("red", "blue", "green", "yellow", "black"))  
+#   }
+# }
+PLOT
+```
+
+### Ejercicio
+A partir de la tabla de correlaciones estimadas entre las variables, si tuviera que elegir una sola variable para proponer un modelo de regresión simple, ¿cuál eligirı́a y porqué?
+
+```{r echo=TRUE}
+as.data.table(cor(DM)) |> flextable() |>  colformat_double(digits = 4) |>  color( color = "red",
+   "all" < 1 ) |>  autofit()
+```
+
+### Ejercicio
+Realizar un ajuste de regresión lineal múltiple. A partir de la tabla de coeficientes estimados, ¿Qué variables resultan significativas? ¿A qué nivel? ¿Cuál es el valor de la estimación para σ 2 ? Especificar las hipótesis nulas y alternativas para alguno de los test t reportados en la tabla, el estadı́stico deltest y la regla de decisión. ¿Cómo se calcula el p-valor para este test?
+
+```{r echo=TRUE}
+MDL <- lm(data=DT,BMI~Pregnancies+Glucose+BloodPressure+SkinThickness+Insulin+DiabetesPedigreeFunction+Age+Outcome)
+```
+
+### Ejercicio
+Evaluar la bondad del ajuste realizado, a través del coeficiente de determinación. Indicar cuánto vale y qué significa.
+
+### Ejercicio
+¿Es la regresión significativa? Especificar las hipotesis nula y alternativa de este test. ¿Cómo se calcula el p-valor en este caso? ¿Rechazarı́a a un nivel de significación de 0.05?.
+
+### Ejercicio
+¿Cuál serı́a la estimación de la esperanza del BMI de una mujer tuvo 2 embarazos y tiene una concentración de glucosa de 100, una presión sistolica de 70, un valor de piel de triceps de 20, no tiene diabetes, un valor de la función pedigree de 0.24 y 30 años de edad?
+
+### Ejercicio
+Hallar un intervalo de confianza y de predicción de nivel 0.95 para la estimación hallada en el item anterior.
+
+### Ejercicio
+*Seleccion de modelos.* Plantear un nuevo modelo en el que intervengan aquellas variables que contribuyen significativamente y estimar los parametros por minimos cuadrados. ¿Que modeloa finalmente? Utilizar medidas de bondad de ajuste y de prediccion, tal como la estimación del error cuadratico medio.
+
