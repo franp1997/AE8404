@@ -3,14 +3,14 @@ title: "Práctica 3 - Parte I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
+  html_document:
+    toc: yes
+    df_print: paged
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
-  html_document:
-    toc: yes
-    df_print: paged
 ---
 
 
@@ -62,7 +62,7 @@ plotNoise = function() {
                )
       ),
       fluidRow(
-        plotOutput('noise', height = "300px")  
+        plotOutput('noise', height = "200px")  
       )
     ),
     server = function(input, output, session) {
