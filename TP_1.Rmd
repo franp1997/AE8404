@@ -114,13 +114,26 @@ Se ve que las siguientes variables debieron ser definidas como num en vez de int
 
 Además se tiene presente que la variable X no tiene relevancia en nuestro estudio, ya que la misma indica el número de paciente.
 
+
+Agregar diagramas de cajas
+
+
 ## Ejercicio 2
-Se desea ajustar un modelo de regresión múltiple para predecir la variable BMI en función del resto
-de las variables en el data set. Escribir el modelo propuesto, indicando los supuestos del mismo.
+_Se desea ajustar un modelo de regresión múltiple para predecir la variable BMI en función del resto de las variables en el data set. Escribir el modelo propuesto, indicando los supuestos del mismo._
 
 Se plantea el modelo
 
-$Y=\beta_0 + \beta_1 \cdot x_{Pregnancies}+ \beta_2 \cdot x_{Glucose} + \beta_3 \cdot x_{Blood Pressure}+ \beta_4 \cdot x_{Skin Thickness}+ \beta_5 \cdot x_{Insulin} + \beta_6 \cdot x_{Diabetes Pedigree Function}+ \beta_7 \cdot x_{Age} + \beta_8 \cdot \mathbb{I} \left( Outcome = 1 \right) + \varepsilon$
+$Y=\beta_0 + \beta_1 \cdot x_{1}+ \beta_2 \cdot x_{2} + \beta_3 \cdot x_{3}+ \beta_4 \cdot x_{4}+ \beta_5 \cdot x_{5} + \beta_6 \cdot x_{6}+ \beta_7 \cdot x_{7} + \beta_8 \cdot x_{8} + \varepsilon$
+
+en donde 
+- $x_1$ reporta `Pregnancies`
+- $x_2$ reporta `Glucose`
+- $x_3$ reporta `BloodPressure`
+- $x_4$ reporta `SkinThickness`
+- $x_5$ reporta `Insulin`
+- $x_6$ reporta `DiabetesPedigreeFunction`
+- $x_7$ reporta `Age`
+- $x_8$ reporta el factor  $\mathbb{I} \left( Outcome = 1 \right)$ 
 
 Los supuestos del modelo son
 
@@ -137,6 +150,11 @@ Modelo <- lm( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + Insu
 
 <!-- Aca habria que agregar una tabla mostrando los valores de cada una de las variables -->
 
+<!-- Estaría bueno agregar una explicación de cómo se calculan -->
+<!-- Explicar matrices X -->
+
+
+Se aclara que la matriz  β ̂ es el vector columna con los valores de los coeficientes
 ## Ejercicio 3
 _Realizar un scatterplot de las variables con la función ggpairs_
 
@@ -146,6 +164,7 @@ ggpairs(data[2:10])
 
 ## Ejercicio 4
 _A partir de la tabla de correlaciones estimadas entre las variables, si tuviera que elegir una sola variable para proponer un modelo de regresión simple, ¿cuál eligiríaa y por qué?_
+
 
 
 Para que se obtenga un buen modelo de predicción mediante una única variable lo que se debe buscar es que el coeficiente de correlación entre las variables en valor absoluto sea lo más cercano a 1 posible. Ya que mientras mas cerca del 1 nos encontremos implicara que existe una relación "mas lineal" entre estas dos. En caso de ser positiva nos habla de que ambas crecen en conjunto, en caso de ser negativa nos indica que si una decrece la otra crece. Cuando el coeficiente de correlación se acerca en modulo a cero implica que las variables no tienen una relación lineal. Hasta llegar al caso en que la correlación es nula que nos indica que las variables están descorrelacionadas.
@@ -193,18 +212,18 @@ Donde $d_{ii}$ es el elemento $ii$ de la matriz $D=(X^{t}X)^{-1}$
 
 De esta manera calculando el estadístico T para cada uno de los betas bajo la suposición de que la hipótesis nula es correcta, se debe calcular mediante la distribución T de Student, la probabilidad de obtener una realización igual o más extrema como la obtenida con la realización observada, esta probabilidad es el p valor.
 
+<!-- REEMPLAZAR NS y usar notacion de clase -->
+Las variables que se consideran significativas son todas aquellas las cuales tienen un Nivel de Significancia $NS \leq 0.05$, para este análisis basta con entrar al summary de la regresión realizada en R y ver uno por uno el $p_{valor}$ asociado a cada variable. Por lo tanto:
 
-Las variables que se consideran significativas son todas aquellas las cuales tienen un $p_{valor} \leq 0.05$, para este análisis basta con entrar al summary de la regresión realizada en R y ver uno por uno el $p_{valor}$ asociado a cada variable. Por lo tanto:
+-   BloodPressure ($\textrm{p} \approx 0$)
 
--   BloodPressure ($\textrm{Nivel de significancia} \approx 0$)
+-   SkinThickness ($\textrm{p} \approx 0$)
 
--   SkinThickness ($\textrm{Nivel de significancia} \approx 0$)
+-   Insulin ($\textrm{p} = 0.0157$)
 
--   Insulin ($\textrm{Nivel de significancia} = 0.0157$)
+-   Age ($\textrm{p} = 0.0234$)
 
--   Age ($\textrm{Nivel de significancia} = 0.0234$)
-
--   Outcome1 ($\textrm{Nivel de significancia} \approx 0$)
+-   Outcome1 ($\textrm{p} \approx 0$)
 
 La estimación de $\sigma^2$ es el cuadrado de Residual standard error brindado por summary, en este caso es de 24.8
 
@@ -233,6 +252,11 @@ Esta última expresión permite una interpretación mas intuitiva. Se ve que en 
 Se ve que $R^2$ es un estadístico muy útil para la comparación de modelos, pero se debe tener en cuenta que esta comparación se debe realizar con modelos del mismo orden ya que $R^2$ no considera al orden del mismo impidiendo la comparación para modelos de distinto orden (es de importancia destacar que existe un estadístico $R^2_{Ajustado}$ que tiene en cuenta este inconveniente).
 
 En este modelo planteado $R^2=0.4825$ y $R^2_{Ajustado}=0.4747$
+
+<!-- Construir esta tabla cn Flextable -->
+<!-- 	      R^2	        R_Ajustado^2 -->
+<!-- Modelo	0.4825    	0.4747 -->
+
 
 ## Ejercicio 7
 _¿Es la regresión significativa? Especificar las hipótesis nula y alternativa de este test. ¿Cómo se calcula el p-valor en este caso? ¿Rechazaría a un nivel de significación de 0.05?_
@@ -278,11 +302,41 @@ Donde para la hipotesis nula:
 
 Para calcular el $p_{valor}$ se debe calcular el valor de estadístico F bajo la condición de hipótesis nula y despejar la probabilidad asociada de ocurrencia de un valor igual o más extremo que el obtenido, esta probabilidad debe ser calculada  mediante la distribución F con los grados de libertad previamente nombrados.
 
+
+<!-- Convertir este texto estático en resultados automaticos extraidos del modelo lm -->
 En este caso, $F = 61.78$ con un $p_{valor} \approx 0$
+
+
+<!-- Falta analizar caso p valor 0.05 -->
+<!-- Yo creo que si se rechaza -->
+
 
 ## Ejercicio 8
 
 _¿Cuál sería la estimación de la esperanza del BMI de una mujer tuvo 2 embarazos y tiene una concentración de glucosa de 100, una presión sistólica de 70, un valor de piel de triceps de 20, no tiene diabetes, un valor de la función pedigree de 0.24 y 30 años de edad?_
+
+En este ejercicio se requiere una predicción de la esperanza condicional asumiendo una observación $x_o$, con la particularidad que la nueva observación no incuye valores de la variable `Insuline`. Para obtener esta estimación, se proponen dos caminos
+
+El primer camino consiste en generar un nuevo modelo de predicción excluyendo a esta variable del set, y obtener una predicción para la nueva observación
+
+ 
+Otra manera de estimar la esperanza condicional es emplear el modelo que ya tenemos, y 
+
+Para calcular la estimación de la esperanza para este caso lo que se debe hacer es generar un vector $x_0$ para estos nuevos datos planteados, y nuestra estimación de la esperanza sería: 
+
+Pero el problema que nos encontramos es que no se nos brinda información sobre la insulina, por lo tanto, el modelo previamente planteado no sirve ya que implicaría la suposición del valor de una variable. 
+Por lo tanto, se debe buscar un nuevo modelo, sin la variable insulina. Para buscar este nuevo modelo se plantea el método Stepwise Best Subset. Donde se estudian todas las 2^k regresiones y elijo el que tenga mayor R_ajustado^2 a o mejor C_p. Siendo este único procedimiento que garantiza que se obtenga el modelo final que realmente optimiza la búsqueda del criterio elegido.
+
+Donde 
+C_P=(‖Y-Y ̂_p ‖^2  )/S^2 +2p-n
+R_ajustado^2=1-(1-R^2 )n/(n-p)
+Se ve que lo que se tiene que buscar es que  C_p≈p y que R_ajustado^2 sea el máximo posible
+Los mejores subsets obtenidos son
+
+
+Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
+
+
 
 ```{r}
 
@@ -305,9 +359,23 @@ summary(Modelo8)
 
 ```
 
+Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
 
 
+Los mejores subsets obtenidos son
 
+<!-- Generar esta tabla mas simple -->
+
+<!-- Subsets	Número -->
+<!-- SkinThickness	1 -->
+<!-- BloodPressure SkinThickness	2 -->
+<!-- BloodPressure SkinThickness Outcome1	3 -->
+<!-- BloodPressure SkinThickness Outcome1 Age	4 -->
+<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1	5 -->
+<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1 Pregnancies	6 -->
+<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1 Pregnancies Glucose	7 -->
+
+Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
 
 
 
@@ -327,6 +395,44 @@ E_y0
 ```
 ## Ejercicio 9
 _Hallar un intervalo de confianza y de predicción de nivel 0.95 para la estimación hallada en el ítem anterior._
+
+### Intervalo de Confianza {-}
+A partir de lo planteado en el ejercicio anterior y sabiendo que  $\hat Y_0∼N(x_0^T β,σ^2 x_0^T (X^T X)^{-1} x_0)$ se puede plantear el siguiente pivote
+
+$$T=\frac{\hat Y_0 - x_0^T  \hat{\beta}} {S \sqrt{(x_0^T (X^T X)^{-1} x_0 )}} \sim t_{n-p}$$
+
+En este caso 
+$$T=\frac{\hat Y_0 - 28.47568} {0.347426} ∼t_{532}$$
+
+
+Planteando el intervalo 
+
+$$I=\left[\hat y_0-t_{n-p,1-α/2}\ S \sqrt{x_0^T (X^T X)^{-1} x_0},\ \ \hat y_0 +t_{n-p,1-α/2} \ S \sqrt{x_0^T (X^T X)^{-1} x_0} \right]$$
+Para un nivel de confianza del `95%`, donde $\alpha=0.05$ se tiene que 
+
+$I \approx [27.79319,29.15818]$
+
+### Intervalo de predicción {-}
+Sobre la base de lo planteado en el inciso anterior, se puede plantear que $\hat Y -Y_0∼N(0,σ^2+σ^2 x_0^T (X^T X)^{-1} x_0)$
+
+De donde se ve que se puede plantear el siguiente pivote
+
+$$T=\frac{\hat Y_0 - x_0^T  \hat{\beta}} {S \sqrt{1+x_0^T (X^T X)^{-1} \ x_0}} \sim t_{n-p}$$
+
+
+En este caso
+
+$$T=\frac{\hat Y_0 - 28.0764} {5.013457} ∼t_{532}$$
+
+Planteando el intervalo 
+I_pred=[y ̂_0-t_(n-p,1-α/2)  S√(1+x_0^T (X^T X)^(-1) x_0 )  ,y ̂_0+t_(n-p,1-α/2)  S√(1+x_0^T (X^T X)^(-1) x_0 )]
+
+$$I=\left[\hat y_0-t_{n-p,1-α/2}\ S \sqrt{1+x_0^T (X^T X)^{-1} x_0},\ \ \hat y_0 +t_{n-p,1-α/2} \ S \sqrt{1+x_0^T (X^T X)^{-1} x_0} \right]$$
+
+
+Reemplazando, teniendo en cuenta que se pide un nivel de 0.95→α=0.05
+I_pred=[18.62708 ,38.32428]
+$I \approx \left[18.6270,38.324288 \right]$
 
 ```{r}
 #Se agrupan las variables requeridas para el test
@@ -359,6 +465,23 @@ predict(Modelo8,a,interval='prediction', level=0.95)
 
 _Selección de modelos. Plantear un nuevo modelo en el que intervengan aquellas variables que contribuyen significativamente y estimar los parámetros por mínimos cuadrados. ¿Qué modelo elegiría finalmente? Utilizar medidas de bondad de ajuste y de predicción, tal como la estimación del error cuadrático medio._
 
+De igual manera que lo planteado en el ejercicio 8, para la selección de modelos se buscaran mediante Stepwise Best Subset, con la diferencia de que en este caso se considerara la insulina como una de las variables a utilizar para la generación del modelo.  Obteniéndose los siguientes subconjuntos
+Subsets	Número
+SkinThickness	1
+BloodPressure SkinThickness	2
+BloodPressure SkinThickness Outcome1	3
+BloodPressure SkinThickness Outcome1 Age	4
+BloodPressure SkinThickness Age Outcome1
+Insulin	5
+BloodPressure SkinThickness Age Outcome1
+Insulin DiabetesPedigreeFunction	6
+BloodPressure SkinThickness Age Outcome1
+Insulin DiabetesPedigreeFunction Pregnancies	7
+BloodPressure SkinThickness Age Outcome1
+Insulin DiabetesPedigreeFunction Pregnancies
+Glucose	8
+
+Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
 
 ```{r}
 
@@ -378,6 +501,33 @@ summary(Modelo_opt)
 
 ```
 
+Donde se ve claramente que el modelo 6 es el que tienen mejor R_ajustado^2 y  C_p.  Vale aclarar que el modelo 7 también brinda un buen R_ajustado^2 y  C_p, pero es descartado debido a que posee mas variables por lo tanto se prefiere el modelo de 6 variables ya que conlleva a un menor sobreajuste.
+Concluyéndose que el modelo que se plantea es:
+Y=β_0  +β_1⋅ x_(Blood Pressure)+β_2⋅ x_(Skin Thickness)+β_3⋅ x_Insulin+β_4⋅ x_(Diabetes Pedigree Function)+β_5⋅ x_Age  +β_6  ⋅I(x_Outcome=1)  +ε
 
+Parámetros del nuevo modelo
+
+Coeficientes	Valor
+β ̂_0 (Intercept)	16.12358
+β ̂_1 (BloodPressure)	0.09253
+β ̂_2 (SkinThickness)	0.37843
+β ̂_3 (Insulin)	0.00473
+β ̂_4 (DiabetesPedigreeFunction)	0.93026
+β ̂_5 (Age)	-0.08087
+β ̂_6 (Outcome1)	2.07514
+
+	S	R_ajustado^2	F	p_valor
+Modelo	4.976	0.4757	82.35	< 2.2e-16
+
+
+## Ejercicio 11
+_Validar los supuestos expresados en el ítem 2 a partir del análisis de los residuos, para el modelo seleccionado._
+Los errores $ε_i$ son independientes entre sí y no están correlacionados con las covariables $x_i$ (Esto no va a ser demostrado)
+
+
+<!-- Residuos de validación cruzada -->
+<!-- Shapiro wilx test -->
+
+<!-- https://www.youtube.com/watch?v=zb-WlauCVTA -->
 
 
