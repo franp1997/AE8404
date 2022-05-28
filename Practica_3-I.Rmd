@@ -162,6 +162,8 @@ Coeff <- function(data=NULL,y,x=NULL,intercept=TRUE){
 }
 ```
 
+
+\newpage
 ## Ejercicio 2 {-}
 
 Se tiene en el archivo `girasol.txt` el rinde de diversas parcelas de girasol (en toneladas) según la
@@ -201,6 +203,7 @@ ggplot(data=DT) +
   
 ```
 
+\newpage
 ## Ejercicio 3 {-}
 
 Considerar el archivo `abalone.txt` que contiene información sobre distintas muestras de abalones. Los atributos están separados por coma, con los siguientes campos: 
@@ -245,8 +248,8 @@ _En este caso, igual que en el inciso anterior se utilizó la función 'Coeff()'
   c. Se trata ahora de establecer una relación entre el peso total `P` y el diámetro del espécimen `D`. Empezar dibujando en un scatter plot ambas variables. Si definimos como `P` al peso total y `D` al diámetro, se consideran los siguientes modelos:
 
 - Modelo lineal simple, $P = b + a\.D + \varepsilon$
-- Modelo cuadrático, $P = c + b\.D + a\.D^2 + \varepsilon$
-- Modelo cúbico sin términos de orden inferior, $P = a\.D^3 + $\varepsilon$
+- Modelo cuadrático, $P = c + b\.D + a \. D^2 + \varepsilon$
+- Modelo cúbico sin términos de orden inferior, $P = a \. D^3 + \varepsilon$
 
   Efectuar en cada caso una regresión y graficar las curvas superpuestas sobre el scatter plot.
 
@@ -274,7 +277,7 @@ P3  <- DT[,.(x=D,y=M3$b1*D^3)] #Predictor
 ```
 ```{r}
 ggplot() +   
-  geom_point(data=DT[,.(P,D)],aes(x=D, y=P),color= "red") +  
+  geom_point(data=DT[,.(P,D)],aes(x=D, y=P),color= "plum") +  
   labs(title="",y="Peso",x = "Diametro") +
   geom_line(data=P1,aes(x=x,y=y,color = "Lineal (M1)"))+
   geom_line(data=P2,aes(x=x,y=y,color = "Cuadrático (M2)"))+
@@ -283,6 +286,7 @@ ggplot() +
   theme_bw()
 ```
 
+\newpage
 ## Ejercicio 4 {-}
 En este ejercicio se crearán datos simulados y se ajustará un modelo de regresión lineal simple.
  
@@ -455,6 +459,7 @@ j) En ambos escenarios, hallar una estimación de la varianza.
 
 
 
+\newpage
 ## Ejercicio 5 {-}
 
   a) Generar el siguiente modelo: Crear dos vectores de datos  $x_1$ y $x_2$ de tamaño 100 con una distribución $X \sim\mathcal{U}(0,1)$  y crear un vector $y = 2 + 2 ∗ x_1 + 0,3 ∗ x_2 + \varepsilon$, con $\varepsilon$  que contenga 100 observaciones con una distribución $\varepsilon \sim\mathcal{N}(0,1)$. ¿Cuales son los coeficientes de regresión?. Estimar la correlación entre $x_1$ y $x_2$. Realizar un scatterplot en el que pueda observarse la relación entre $x_1$ y $x_2$. Utilizando los datos generados, ajustar a un modelo lineal para predecir $y$ en función de $x_1$ y $x_2$ , utilizando el método de cuadrados mı́nimos y comparar los valores exactos de $\beta$  con sus valores estimados.
