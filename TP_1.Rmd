@@ -3,14 +3,14 @@ title: "Trabajo Práctico I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
-  html_document:
-    toc: yes
-    df_print: paged
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
+  html_document:
+    toc: yes
+    df_print: paged
   word_document:
     toc: yes
 ---
@@ -179,14 +179,17 @@ t(Coeff) %>% as.data.table() %>% flextable() |>  colformat_double(digits = 4)
 ## Ejercicio 3
 _Realizar un scatterplot de las variables con la función ggpairs_
 
-```{r echo=FALSE,results='hide',fig.keep='all'}
-data <- read.csv("data/diabetes2.csv", header = TRUE)
-data$Outcome<-factor(data$Outcome)
-data$Glucose<-as.numeric(data$Glucose)
-data$BloodPressure<-as.numeric(data$BloodPressure)
-data$SkinThickness<-as.numeric(data$SkinThickness)
-data$Insulin<-as.numeric(data$Insulin)
-ggpairs(data[2:10])
+```{r echo=FALSE,warning=FALSE,include=TRUE}
+# data <- read.csv("data/diabetes2.csv", header = TRUE)
+# data$Outcome<-factor(data$Outcome)
+# data$Glucose<-as.numeric(data$Glucose)
+# data$BloodPressure<-as.numeric(data$BloodPressure)
+# data$SkinThickness<-as.numeric(data$SkinThickness)
+# data$Insulin<-as.numeric(data$Insulin)
+# ggpairs(data[2:10])
+ggpairs(DT,aes(color = O, alpha = 0.5), 
+         upper = list(continuous = wrap("cor", size = 2.5)),
+        lower = list(combo = wrap(ggally_facethist, binwidth = 1)))
 ```
 
 ## Ejercicio 4
@@ -350,10 +353,13 @@ El primer camino consiste en generar un nuevo modelo de predicción excluyendo a
  
 Otra manera de estimar la esperanza condicional es emplear el modelo que ya tenemos, y 
 (E[Y_0]) ̂=x_0^T  β ̂
-
-
 ```{r}
-
+data <- read.csv("data/diabetes2.csv", header = TRUE)
+data$Outcome<-factor(data$Outcome)
+data$Glucose<-as.numeric(data$Glucose)
+data$BloodPressure<-as.numeric(data$BloodPressure)
+data$SkinThickness<-as.numeric(data$SkinThickness)
+data$Insulin<-as.numeric(data$Insulin)
 comb_opt_sins <- regsubsets( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + DiabetesPedigreeFunction + Age + Outcome, data = data, method = "exhaustive")
 
 par(mfrow=c(2,2))
@@ -372,6 +378,8 @@ Modelo8 <- lm( BMI ~ Pregnancies + BloodPressure + SkinThickness + DiabetesPedig
 summary(Modelo8)
 
 ```
+
+
 
 
 
@@ -423,18 +431,22 @@ En este caso
 $$T=\frac{\hat Y_0 - 28.0764} {5.013457} ∼t_{532}$$
 
 Planteando el intervalo 
-I_pred=[y ̂_0-t_(n-p,1-α/2)  S√(1+x_0^T (X^T X)^(-1) x_0 )  ,y ̂_0+t_(n-p,1-α/2)  S√(1+x_0^T (X^T X)^(-1) x_0 )]
 
 $$I=\left[\hat y_0-t_{n-p,1-α/2}\ S \sqrt{1+x_0^T (X^T X)^{-1} x_0},\ \ \hat y_0 +t_{n-p,1-α/2} \ S \sqrt{1+x_0^T (X^T X)^{-1} x_0} \right]$$
 
 
 Reemplazando, teniendo en cuenta que se pide un nivel de 0.95→α=0.05
-I_pred=[18.62708 ,38.32428]
+
 $I \approx \left[18.6270,38.324288 \right]$
 
 ```{r}
 #Se agrupan las variables requeridas para el test
-
+data <- read.csv("data/diabetes2.csv", header = TRUE)
+data$Outcome<-factor(data$Outcome)
+data$Glucose<-as.numeric(data$Glucose)
+data$BloodPressure<-as.numeric(data$BloodPressure)
+data$SkinThickness<-as.numeric(data$SkinThickness)
+data$Insulin<-as.numeric(data$Insulin)
 S <- summary(Modelo8)$sigma
 X <- cbind(rep(1,length(data$Pregnancies)),data.matrix(data[2]),data.matrix(data[4:5]),data.matrix(data[8:9])) #falta outcome el cual se agrega en la siguiente linea, ya que se tiene que acomodar el factor para la funcion indicatriz
 
