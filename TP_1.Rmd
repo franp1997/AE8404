@@ -213,6 +213,8 @@ summary(Modelo)
 ```
 
 ## Ejercicio 6
+_Evaluar la bondad del ajuste realizado, a través del coeficiente de determinación. Indicar cuánto vale y qué significa._ 
+
 
 La bondad del ajuste puede ser medida por el estadístico $R^2$. El cual se define como
 
@@ -233,6 +235,8 @@ Se ve que $R^2$ es un estadístico muy útil para la comparación de modelos, pe
 En este modelo planteado $R^2=0.4825$ y $R^2_{Ajustado}=0.4747$
 
 ## Ejercicio 7
+_¿Es la regresión significativa? Especificar las hipótesis nula y alternativa de este test. ¿Cómo se calcula el p-valor en este caso? ¿Rechazaría a un nivel de significación de 0.05?_
+
 
 Para analizar la significación del modelo de regresión se plantea el siguiente test de hipótesis
 
@@ -277,6 +281,9 @@ Para calcular el $p_{valor}$ se debe calcular el valor de estadístico F bajo la
 En este caso, $F = 61.78$ con un $p_{valor} \approx 0$
 
 ## Ejercicio 8
+
+_¿Cuál sería la estimación de la esperanza del BMI de una mujer tuvo 2 embarazos y tiene una concentración de glucosa de 100, una presión sistólica de 70, un valor de piel de triceps de 20, no tiene diabetes, un valor de la función pedigree de 0.24 y 30 años de edad?_
+
 ```{r}
 
 comb_opt_sins <- regsubsets( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + DiabetesPedigreeFunction + Age + Outcome, data = data, method = "exhaustive")
@@ -319,6 +326,8 @@ E_y0
 
 ```
 ## Ejercicio 9
+_Hallar un intervalo de confianza y de predicción de nivel 0.95 para la estimación hallada en el ítem anterior._
+
 ```{r}
 #Se agrupan las variables requeridas para el test
 
@@ -347,6 +356,10 @@ predict(Modelo8,a,interval='prediction', level=0.95)
 ```
 
 ## Ejercicio 10
+
+_Selección de modelos. Plantear un nuevo modelo en el que intervengan aquellas variables que contribuyen significativamente y estimar los parámetros por mínimos cuadrados. ¿Qué modelo elegiría finalmente? Utilizar medidas de bondad de ajuste y de predicción, tal como la estimación del error cuadrático medio._
+
+
 ```{r}
 
 library(ggplot2)
