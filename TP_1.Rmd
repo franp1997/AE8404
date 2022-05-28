@@ -92,30 +92,31 @@ set_flextable_defaults(
 Cargar los datos de diabetes2.csv. La variable Outcome indica si la persona es diabética (1) o no (0). Transformarla en un factor. Finalmente revisar que todas las variables contenidas en el dataframe estén correctamente definidas.
 
 ```{r}
-data <- read.csv("data/diabetes2.csv", header = TRUE)
-data$Outcome<-factor(data$Outcome)
-data$Glucose<-as.numeric(data$Glucose)
-data$BloodPressure<-as.numeric(data$BloodPressure)
-data$SkinThickness<-as.numeric(data$SkinThickness)
-data$Insulin<-as.numeric(data$Insulin)
-boxplot(data[6])
+# data <- read.csv("data/diabetes2.csv", header = TRUE)
+DT <-fread(file=file.path("data","diabetes2.csv"))
+DT[,V1:=NULL]
+DT[,Outcome:=as.factor(Outcome)]
+setnames(DT,
+         old=c("Pregnancies","Glucose" ,"BloodPressure", "SkinThickness" ,"Insulin" ,"DiabetesPedigreeFunction", "Age" ,"Outcome"),
+         new=c("P","G" ,"BP", "ST" ,"I" ,"DPF", "A" ,"O"))
+```
+Mediante un análisis de los datos del set, se observan muchas variables definidas como enteros, `int` que en algunos casos representan variables discretas cardinales tales como la cantidad de embarazos`(Pregnancies,)`, ordinales tales como la edad `(Age)` o nominales binarias tales como`(Outcomes)` y en otros casos, representan variable reales, tales como `Age`. Para facilitar la representación de algunas figuras, se renombran las variables del dataset original y se presenta un diagrama de cajas para identificar los rangos de las variables y sus potenciales otliers
 
+```{r}
+
+boxplot(DT)
 ```
 
-Se ve que las siguientes variables debieron ser definidas como num en vez de int, ya que son continuas y no discretas.
+  A partir de laa figura anterior puede apreciarse que la variable `I (Insulin)` tiene algunos valores que parecen ser outliers. La inspección del dataset indica que existen `r nrow(DT[I==0])` observaciones con `I=0` que requieren discusión
 
--   Glucose
+<!-- Se ve que las siguientes variables debieron ser definidas como num en vez de int, ya que son continuas y no discretas. -->
 
--   BloodPressure
-
--   SkinThickness
-
--   Insulin
-
-Además se tiene presente que la variable X no tiene relevancia en nuestro estudio, ya que la misma indica el número de paciente.
+<!-- -   Glucose -->
+<!-- -   BloodPressure -->
+<!-- -   SkinThickness -->
+<!-- -   Insulin -->
 
 
-Agregar diagramas de cajas
 
 
 ## Ejercicio 2
@@ -318,24 +319,10 @@ _¿Cuál sería la estimación de la esperanza del BMI de una mujer tuvo 2 embar
 En este ejercicio se requiere una predicción de la esperanza condicional asumiendo una observación $x_o$, con la particularidad que la nueva observación no incuye valores de la variable `Insuline`. Para obtener esta estimación, se proponen dos caminos
 
 El primer camino consiste en generar un nuevo modelo de predicción excluyendo a esta variable del set, y obtener una predicción para la nueva observación
-
+(E[Y_0]) ̂=x_0^T  β ̂
  
 Otra manera de estimar la esperanza condicional es emplear el modelo que ya tenemos, y 
-
-Para calcular la estimación de la esperanza para este caso lo que se debe hacer es generar un vector $x_0$ para estos nuevos datos planteados, y nuestra estimación de la esperanza sería: 
-
-Pero el problema que nos encontramos es que no se nos brinda información sobre la insulina, por lo tanto, el modelo previamente planteado no sirve ya que implicaría la suposición del valor de una variable. 
-Por lo tanto, se debe buscar un nuevo modelo, sin la variable insulina. Para buscar este nuevo modelo se plantea el método Stepwise Best Subset. Donde se estudian todas las 2^k regresiones y elijo el que tenga mayor R_ajustado^2 a o mejor C_p. Siendo este único procedimiento que garantiza que se obtenga el modelo final que realmente optimiza la búsqueda del criterio elegido.
-
-Donde 
-C_P=(‖Y-Y ̂_p ‖^2  )/S^2 +2p-n
-R_ajustado^2=1-(1-R^2 )n/(n-p)
-Se ve que lo que se tiene que buscar es que  C_p≈p y que R_ajustado^2 sea el máximo posible
-Los mejores subsets obtenidos son
-
-
-Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
-
+(E[Y_0]) ̂=x_0^T  β ̂
 
 
 ```{r}
@@ -359,23 +346,7 @@ summary(Modelo8)
 
 ```
 
-Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
 
-
-Los mejores subsets obtenidos son
-
-<!-- Generar esta tabla mas simple -->
-
-<!-- Subsets	Número -->
-<!-- SkinThickness	1 -->
-<!-- BloodPressure SkinThickness	2 -->
-<!-- BloodPressure SkinThickness Outcome1	3 -->
-<!-- BloodPressure SkinThickness Outcome1 Age	4 -->
-<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1	5 -->
-<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1 Pregnancies	6 -->
-<!-- BloodPressure SkinThickness DiabetesPedigreeFunction Age Outcome1 Pregnancies Glucose	7 -->
-
-Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
 
 
 
@@ -464,6 +435,18 @@ predict(Modelo8,a,interval='prediction', level=0.95)
 ## Ejercicio 10
 
 _Selección de modelos. Plantear un nuevo modelo en el que intervengan aquellas variables que contribuyen significativamente y estimar los parámetros por mínimos cuadrados. ¿Qué modelo elegiría finalmente? Utilizar medidas de bondad de ajuste y de predicción, tal como la estimación del error cuadrático medio._
+
+Para buscar este nuevo modelo se plantea el método Stepwise Best Subset. Donde se estudian todas las 2^k regresiones y elijo el que tenga mayor R_ajustado^2 a o mejor C_p. Siendo este único procedimiento que garantiza que se obtenga el modelo final que realmente optimiza la búsqueda del criterio elegido.
+
+Donde 
+C_P=(‖Y-Y ̂_p ‖^2  )/S^2 +2p-n
+R_ajustado^2=1-(1-R^2 )n/(n-p)
+Se ve que lo que se tiene que buscar es que  C_p≈p y que R_ajustado^2 sea el máximo posible
+Los mejores subsets obtenidos son
+
+
+Se calcularon y graficaron distintos estadísticos de bondad para comparar con que modelo quedarnos
+
 
 De igual manera que lo planteado en el ejercicio 8, para la selección de modelos se buscaran mediante Stepwise Best Subset, con la diferencia de que en este caso se considerara la insulina como una de las variables a utilizar para la generación del modelo.  Obteniéndose los siguientes subconjuntos
 Subsets	Número
