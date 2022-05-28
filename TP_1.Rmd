@@ -1,0 +1,370 @@
+---
+title: "Trabajo Práctico I"
+author: "A. Verri Kozlowski y F. Patitucci"
+subtitle: Aprendizaje Estadístico -  (84:04)
+output:
+  word_document:
+    toc: yes
+  html_document:
+    toc: yes
+    df_print: paged
+  pdf_document:
+    toc: yes
+    number_sections: no
+    latex_engine: xelatex
+    keep_tex: no
+---
+
+```{r warning=FALSE, include=FALSE}
+#lib
+library(ggplot2)
+library(data.table) # data,frame extendido
+library(ggthemes) 
+library(flextable) # Plot Tables
+library(GGally)
+library(leaps)
+
+# knit options ----
+knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+
+knitr::opts_chunk$set(echo = TRUE)
+# out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+getOutputFormat <- function() {
+  output <- rmarkdown:::parse_yaml_front_matter(
+    readLines(knitr::current_input())
+    )$output
+  if (is.list(output)){
+    return(names(output)[1])
+  } else {
+    return(output[1])
+  }
+}
+
+# rnd  
+set.seed(25111970)
+
+# flextable  ----
+use_df_printer()
+set_flextable_defaults(
+  font.size = 10,border.color = "gray",
+  padding.bottom = 3,   padding.top = 3,
+  padding.left = 4,  padding.right = 4,
+  post_process_html = function(x){
+    # theme_booktabs(x)  |>
+    theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |> 
+      fontsize(size = 10, part = "header")|> 
+      fontsize(size = 10, part = "body")
+  },
+  post_process_pdf = function(x){
+    # theme_booktabs(x)  |>
+      theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |>
+      fontsize(size = 9, part = "header")|> 
+      fontsize(size = 9, part = "body")
+  },
+  post_process_docx = function(x){
+    theme_vanilla(x) |>
+      set_table_properties(layout = "autofit") |>
+      autofit() |>
+      align(align="center",part = "header") |>
+      bold(part = "header")  |>
+      fontsize(size = 10, part = "header")|> 
+      fontsize(size = 9, part = "body")
+  }
+) 
+```
+
+*El dataset `diabetes2.csv` es original del National Institute of Diabetes and Digestive and Kidney Diseases. Se creó con el objetivo de predecir si un paciente tiene o no diabetes, basado en diferentes medidas contenidas en el dataset. En particular, todos los pacientes son de sexo femenino mayores de 21 a~nos de herencia Pima. Para este primer estudio, lo que buscaremos es encontrar relaciones entre otras de las variables contenidas en el dataset.*
+
+## Ejercicio 1
+Cargar los datos de diabetes2.csv. La variable Outcome indica si la persona es diabética (1) o no (0). Transformarla en un factor. Finalmente revisar que todas las variables contenidas en el dataframe estén correctamente definidas.
+
+```{r}
+data <- read.csv("data/diabetes2.csv", header = TRUE)
+data$Outcome<-factor(data$Outcome)
+data$Glucose<-as.numeric(data$Glucose)
+data$BloodPressure<-as.numeric(data$BloodPressure)
+data$SkinThickness<-as.numeric(data$SkinThickness)
+data$Insulin<-as.numeric(data$Insulin)
+boxplot(data[6])
+
+```
+
+Se ve que las siguientes variables debieron ser definidas como num en vez de int, ya que son continuas y no discretas.
+
+-   Glucose
+
+-   BloodPressure
+
+-   SkinThickness
+
+-   Insulin
+
+Además se tiene presente que la variable X no tiene relevancia en nuestro estudio, ya que la misma indica el número de paciente.
+
+## Ejercicio 2
+Se desea ajustar un modelo de regresión múltiple para predecir la variable BMI en función del resto
+de las variables en el data set. Escribir el modelo propuesto, indicando los supuestos del mismo.
+
+Se plantea el modelo
+
+$Y=\beta_0 + \beta_1 \cdot x_{Pregnancies}+ \beta_2 \cdot x_{Glucose} + \beta_3 \cdot x_{Blood Pressure}+ \beta_4 \cdot x_{Skin Thickness}+ \beta_5 \cdot x_{Insulin} + \beta_6 \cdot x_{Diabetes Pedigree Function}+ \beta_7 \cdot x_{Age} + \beta_8 \cdot \mathbb{I} \left( Outcome = 1 \right) + \varepsilon$
+
+Los supuestos del modelo son
+
+-   Los errores $\varepsilon_i$ tienen media cero. Esto es $\mathbb{E}\left[\varepsilon_i \right] = 0$
+
+-   Los errores $\varepsilon_i$ tienen todos la misma varianza. Esto es $\mathbb{VAR}\left[\varepsilon_i \right] = \sigma^2$
+
+-   Los errores $\varepsilon_i$ tienen distribuci´on Normal. Los errores $\varepsilon_i$ son independientes entre si y no están correlacionados con las covariables $x_i$
+
+```{r}
+Modelo <- lm( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + Insulin + DiabetesPedigreeFunction + Age + Outcome, data = data)
+
+```
+
+<!-- Aca habria que agregar una tabla mostrando los valores de cada una de las variables -->
+
+## Ejercicio 3
+_Realizar un scatterplot de las variables con la función ggpairs_
+
+```{r echo=FALSE,results='hide',fig.keep='all'}
+ggpairs(data[2:10])
+```
+
+## Ejercicio 4
+_A partir de la tabla de correlaciones estimadas entre las variables, si tuviera que elegir una sola variable para proponer un modelo de regresión simple, ¿cuál eligiríaa y por qué?_
+
+
+Para que se obtenga un buen modelo de predicción mediante una única variable lo que se debe buscar es que el coeficiente de correlación entre las variables en valor absoluto sea lo más cercano a 1 posible. Ya que mientras mas cerca del 1 nos encontremos implicara que existe una relación "mas lineal" entre estas dos. En caso de ser positiva nos habla de que ambas crecen en conjunto, en caso de ser negativa nos indica que si una decrece la otra crece. Cuando el coeficiente de correlación se acerca en modulo a cero implica que las variables no tienen una relación lineal. Hasta llegar al caso en que la correlación es nula que nos indica que las variables están descorrelacionadas.
+
+-   Si se quiere predecir la variable Pregnancies elegiría Age
+
+-   Si se quiere predecir la variable Glucose elegiría Insulin
+
+-   Si se quiere predecir la variable Blood Pressure elegiría Age
+
+-   Si se quiere predecir la variable Skin Thickness elegiría BMI
+
+-   Si se quiere predecir la variable Insulin elegiría Glucose
+
+-   Si se quiere predecir la variable BMI elegiría Skin Thickness
+
+-   Si se quiere predecir la variable Diabetes Pedigree Function elegiría Glucose (en caso de facilitar el análisis podrían ser utilizadas BMI o Insulin)
+
+-   Si se quiere predecir la variable Age elegiría Pregnancies
+
+Se debe tener en cuenta que para este análisis se tuvo en cuenta el coeficiente de correlación de las variables, pero para un análisis más exhaustivo se debe tener presente la complejidad de medición de cada variable, además de otros factores particulares de esta área.
+
+## Ejercicio 5
+_Realizar un ajuste de regresión lineal múltiple. A partir de la tabla de coeficientes estimados, ¿Qué variables resultan significativas? ¿A qué nivel? ¿Cuál es el valor de la estimación para $\sigma^2$? Especificar las hipótesis nulas y alternativas para alguno de los test t reportados en la tabla, el estadístico del test y la regla de decisión. ¿Cómo se calcula el p-valor para este test?_
+
+Antes de plantear el test de significancia, es importante notar que para esto se agrega el supuesto a nuestro modelo de que los errores tienen una distribución conjuntamente normal. Por lo tanto para un $X$ fijo
+
+$Y \sim N_n \left( X \beta , \sigma^2 I \right)$
+
+A partir de esto se plantea los siguientes test de hipótesis ( $i \in \left[ 1, 7 \right]$, no se testea para $\beta_0$ ya que el mismo actúa como un pasabajos, mejorando nuestro modelo)
+
+**Test**
+
+$H_0 : \beta_i=0 \: vs \: H_1 : \beta_i \neq 0$
+
+La regla de decision a utilizar es
+
+$\phi_{i}(X)= \left\{ \begin{array}{lcc} 1 & si & |T_i| > K_{\alpha_i} \\ \\ 0 & caso \; contrario \end{array} \right.$
+
+Donde $T_i$ es nuentro estadistico, el cual tiene distribucion T de Student con $n-p$ grado de libertad, en este caso el grado de libertad es 530.
+
+$T_i=\frac{ \hat{\beta_i}}{S\cdot d_{ii}}$
+
+Donde $d_{ii}$ es el elemento $ii$ de la matriz $D=(X^{t}X)^{-1}$
+
+De esta manera calculando el estadístico T para cada uno de los betas bajo la suposición de que la hipótesis nula es correcta, se debe calcular mediante la distribución T de Student, la probabilidad de obtener una realización igual o más extrema como la obtenida con la realización observada, esta probabilidad es el p valor.
+
+
+Las variables que se consideran significativas son todas aquellas las cuales tienen un $p_{valor} \leq 0.05$, para este análisis basta con entrar al summary de la regresión realizada en R y ver uno por uno el $p_{valor}$ asociado a cada variable. Por lo tanto:
+
+-   BloodPressure ($\textrm{Nivel de significancia} \approx 0$)
+
+-   SkinThickness ($\textrm{Nivel de significancia} \approx 0$)
+
+-   Insulin ($\textrm{Nivel de significancia} = 0.0157$)
+
+-   Age ($\textrm{Nivel de significancia} = 0.0234$)
+
+-   Outcome1 ($\textrm{Nivel de significancia} \approx 0$)
+
+La estimación de $\sigma^2$ es el cuadrado de Residual standard error brindado por summary, en este caso es de 24.8
+
+```{r}
+summary(Modelo)
+```
+
+## Ejercicio 6
+
+La bondad del ajuste puede ser medida por el estadístico $R^2$. El cual se define como
+
+$$R^2=\frac{||\hat{Y}-\bar{Y}||^2}{||Y-\bar{Y}||^2}$$
+
+$$R^2=\frac{||Y-\bar{Y}||^2-||Y-\hat{Y}||^2}{||Y-\bar{Y}||^2}$$
+
+Donde
+
+-   $Y$ valores verdaderos  
+-   $\bar{Y}$ valores promedio  
+-   $\hat{Y}$ valores estimados  
+
+Esta última expresión permite una interpretación mas intuitiva. Se ve que en el numerador tenemos la suma de los errores cuadráticos entre los valores verdaderos y los promedios, menos la suma de los errores cuadráticos entre los valores verdaderos y los estimados, por último, en el denominador tenemos la suma de los errores cuadráticos entre los valores verdaderos y los promedios. Es lógico pensar que $R^2$ no puede tomar valores negativos ya que en caso de que eso pase implicaría que nuestro modelo predice peor que la media, y además claramente se ve que mientras mas se acerque a uno, implicara que la suma de los errores cuadráticos entre los valores verdaderos y los estimados tiende a cero, por lo tanto, nuestro modelo se encontrara mas ajustado. 
+
+Se ve que $R^2$ es un estadístico muy útil para la comparación de modelos, pero se debe tener en cuenta que esta comparación se debe realizar con modelos del mismo orden ya que $R^2$ no considera al orden del mismo impidiendo la comparación para modelos de distinto orden (es de importancia destacar que existe un estadístico $R^2_{Ajustado}$ que tiene en cuenta este inconveniente).
+
+En este modelo planteado $R^2=0.4825$ y $R^2_{Ajustado}=0.4747$
+
+## Ejercicio 7
+
+Para analizar la significación del modelo de regresión se plantea el siguiente test de hipótesis
+
+**Test**
+
+$\begin{array}{cc} H_{0} : \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 = \beta_6 = \beta_7 = \beta_8 = 0 & vs & H_1: \beta_{i} \neq 0 \; con \: i \in \left[ 1 , 8 \right] \end{array}$
+
+La regla de decisión a utilizar es
+
+$\phi_{i}(\underline{X})= \left\{ \begin{array}{lcc} 1 & si & F > F_{p-1,n-p,1-\alpha} \\ \\ 0 & caso \; contrario \end{array} \right.$
+
+Donde $F$ es nuestro estadístico, el cual tiene distribución de Fischer-Snedecor con $(p-1, n-p)$ grados de libertad (en este caso $(8,530)$ grados de libertad).
+
+$F=\frac{(C \hat{\beta}-\delta)^T (C(X^{T}X)^{-1}C^{T})^-1 (C \hat{\beta}-\delta)} {qS^{2}}$
+
+Donde para la hipotesis nula:
+
+- $C = \left[\begin{array}{cc} 
+0&1&0&0&0&0&0&0&0\\ 
+0&0&1&0&0&0&0&0&0\\ 
+0&0&0&1&0&0&0&0&0\\
+0&0&0&0&1&0&0&0&0\\
+0&0&0&0&0&1&0&0&0\\
+0&0&0&0&0&0&1&0&0\\ 
+0&0&0&0&0&0&0&1&0\\
+0&0&0&0&0&0&0&0&1
+\end{array}\right]$
+
+- $\delta = \left[\begin{array}{cc} 
+0\\ 
+0\\ 
+0\\
+0\\
+0\\
+0\\ 
+0\\
+0
+\end{array}\right]$
+
+Para calcular el $p_{valor}$ se debe calcular el valor de estadístico F bajo la condición de hipótesis nula y despejar la probabilidad asociada de ocurrencia de un valor igual o más extremo que el obtenido, esta probabilidad debe ser calculada  mediante la distribución F con los grados de libertad previamente nombrados.
+
+En este caso, $F = 61.78$ con un $p_{valor} \approx 0$
+
+## Ejercicio 8
+```{r}
+
+comb_opt_sins <- regsubsets( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + DiabetesPedigreeFunction + Age + Outcome, data = data, method = "exhaustive")
+
+par(mfrow=c(2,2))
+plot(summary(comb_opt_sins)$rss,pch="O",xlab="Modelo", ylab= "RSS", main ="RSS del Modelo")
+
+
+plot(summary(comb_opt_sins)$rsq,pch="O",xlab="Modelo",ylim=c(.4,.5), ylab= "R^2", main ="R^2 del Modelo")
+
+plot(summary(comb_opt_sins)$adjr2,pch="O",xlab="Modelo", ylab= "R^2 aj", main ="R^2 ajustado del Modelo")
+
+plot(1:7,summary(comb_opt_sins)$cp,pch="O",xlim=c(0,10),ylim=c(0,10),xlab="Modelo", ylab= "CP", main ="Cp del Modelo")
+abline(0,1)
+
+Modelo8 <- lm( BMI ~ Pregnancies + BloodPressure + SkinThickness + DiabetesPedigreeFunction + Age + Outcome, data = data)
+
+summary(Modelo8)
+
+```
+
+
+
+
+
+
+
+```{r}
+#Se ve los rangos para verificar las hipotesis
+range(data$Pregnancies, na.rm = TRUE)
+range(data$BloodPressure, na.rm = TRUE)
+range(data$SkinThickness, na.rm = TRUE)
+range(data$DiabetesPedigreeFunction, na.rm = TRUE)
+range(data$Age, na.rm = TRUE)
+
+#se calcula la esperanza en el punto
+X_0<-c(1,2,70,20,0.24,30,0)
+E_y0<-sum(X_0*Modelo8$coefficients)
+E_y0
+
+```
+## Ejercicio 9
+```{r}
+#Se agrupan las variables requeridas para el test
+
+S <- summary(Modelo8)$sigma
+X <- cbind(rep(1,length(data$Pregnancies)),data.matrix(data[2]),data.matrix(data[4:5]),data.matrix(data[8:9])) #falta outcome el cual se agrega en la siguiente linea, ya que se tiene que acomodar el factor para la funcion indicatriz
+
+X<-cbind(X,data.matrix(data[10])-1)
+
+# Intervalo de confianza -------------
+Den <- S*sqrt(t(X_0)%*%solve(t(X)%*%X)%*%X_0) #Denominador del estadistico T
+alfa <- .05
+t <- qt(1-alfa/2,532)
+Inter_conf<-c(E_y0-t*Den,E_y0+t*Den)
+
+#Se revisa mediante R
+a <-data.frame(Pregnancies=2,BloodPressure=70,SkinThickness=20,DiabetesPedigreeFunction=.24,Age=30,Outcome= 0)
+a$Outcome<-factor(a$Outcome, levels =c(0,1))
+predict(Modelo8,a,interval="confidence", level=0.95)
+
+
+# Intervalo de prediccion -------------
+Den <- S*sqrt(1+t(X_0)%*%solve(t(X)%*%X)%*%X_0) #Denominador del estadistico T
+Inter_pre<-c(E_y0-t*Den,E_y0+t*Den)
+predict(Modelo8,a,interval='prediction', level=0.95)
+
+```
+
+## Ejercicio 10
+```{r}
+
+library(ggplot2)
+comb_opt <- regsubsets( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + Insulin + DiabetesPedigreeFunction + Age + Outcome, data = data, method = "exhaustive")
+
+
+par(mfrow=c(2,2))
+plot(summary(comb_opt)$rss,pch=21,xlab="Modelo", ylab= "RSS", main ="RSS del Modelo")
+plot(summary(comb_opt)$rsq,pch=21,xlab="Modelo", ylab= "R^2", main ="R^2 del Modelo")
+plot(summary(comb_opt)$adjr2,pch=21,xlab="Modelo", ylab= "R^2 aj", main ="R^2 ajustado del Modelo")
+plot(1:8,summary(comb_opt)$cp,pch=21,ylim=c(0,10),xlab="Modelo", ylab= "CP", main ="Cp del Modelo")
+abline(0,1)
+summary(comb_opt)
+Modelo_opt <-  lm( BMI ~  BloodPressure + SkinThickness + Insulin + DiabetesPedigreeFunction + Age + Outcome, data = data)
+summary(Modelo_opt)
+
+```
+
+
+
+
