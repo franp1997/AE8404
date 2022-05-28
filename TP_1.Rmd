@@ -3,8 +3,6 @@ title: "Trabajo Práctico I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
-  word_document:
-    toc: yes
   html_document:
     toc: yes
     df_print: paged
@@ -13,6 +11,8 @@ output:
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
+  word_document:
+    toc: yes
 ---
 
 ```{r warning=FALSE, include=FALSE}
@@ -91,7 +91,7 @@ set_flextable_defaults(
 ## Ejercicio 1
 Cargar los datos de diabetes2.csv. La variable Outcome indica si la persona es diabética (1) o no (0). Transformarla en un factor. Finalmente revisar que todas las variables contenidas en el dataframe estén correctamente definidas.
 
-```{r}
+```{r echo=TRUE,include=FALSE}
 # data <- read.csv("data/diabetes2.csv", header = TRUE)
 DT <-fread(file=file.path("data","diabetes2.csv"))
 DT[,V1:=NULL]
@@ -100,14 +100,21 @@ setnames(DT,
          old=c("Pregnancies","Glucose" ,"BloodPressure", "SkinThickness" ,"Insulin" ,"DiabetesPedigreeFunction", "Age" ,"Outcome"),
          new=c("P","G" ,"BP", "ST" ,"I" ,"DPF", "A" ,"O"))
 ```
-Mediante un análisis de los datos del set, se observan muchas variables definidas como enteros, `int` que en algunos casos representan variables discretas cardinales tales como la cantidad de embarazos`(Pregnancies,)`, ordinales tales como la edad `(Age)` o nominales binarias tales como`(Outcomes)` y en otros casos, representan variable reales, tales como `Age`. Para facilitar la representación de algunas figuras, se renombran las variables del dataset original y se presenta un diagrama de cajas para identificar los rangos de las variables y sus potenciales otliers
+Mediante un análisis de los datos del set, se observan muchas variables definidas como enteros, `int` que en algunos casos representan variables discretas cardinales tales como la cantidad de embarazos`(Pregnancies,)`, ordinales tales como la edad `(Age)` o nominales binarias tales como`(Outcomes)` y en otros casos, representan variable reales, tales como `Age`. Para facilitar la representación de algunas figuras, se elimina la columna de índice, se renombran las variables del dataset original. El tipo de dato `int` del dataset no afecta los algoritmos del modelo de regresión y no requieren tratamiento
 
-```{r}
+La figura siguiente muestra un diagrama de cajas (boxPlot) para las variables continuas
 
+```{r echo=FALSE}
 boxplot(DT)
 ```
 
-  A partir de laa figura anterior puede apreciarse que la variable `I (Insulin)` tiene algunos valores que parecen ser outliers. La inspección del dataset indica que existen `r nrow(DT[I==0])` observaciones con `I=0` que requieren discusión
+La inspección del dataset indica que existen `r nrow(DT[I==0])` observaciones con `I=0`y el primer valor diferente a 0 es 14. A partir del boxPlot puede apreciarse que la variable `I (Insulin)` tiene algunos valores que en apariencia parecen ser outliers pero eso es debido a las escalas diferentes. Los datos estandarizados (no centrados) muestran el siguiente diagrama de cajas
+
+```{r echo=FALSE}
+DTS <- DT[,.(G=scale(G,center = TRUE),I=scale(I,center = TRUE),BMI=scale(BMI,center = TRUE),DPF=scale(DPF,center = TRUE),BP=scale(BP,center = TRUE),ST=scale(ST,center = TRUE),A=scale(A,center = TRUE),P=scale(P,center = TRUE))]
+boxplot(DTS)
+```
+
 
 <!-- Se ve que las siguientes variables debieron ser definidas como num en vez de int, ya que son continuas y no discretas. -->
 
@@ -122,44 +129,63 @@ boxplot(DT)
 ## Ejercicio 2
 _Se desea ajustar un modelo de regresión múltiple para predecir la variable BMI en función del resto de las variables en el data set. Escribir el modelo propuesto, indicando los supuestos del mismo._
 
-Se plantea el modelo
+Sea una variable aleatoria $Y$ definida como una función de un vector de variables aleatorias $X$ según el siguiente modelo
 
-$Y=\beta_0 + \beta_1 \cdot x_{1}+ \beta_2 \cdot x_{2} + \beta_3 \cdot x_{3}+ \beta_4 \cdot x_{4}+ \beta_5 \cdot x_{5} + \beta_6 \cdot x_{6}+ \beta_7 \cdot x_{7} + \beta_8 \cdot x_{8} + \varepsilon$
+$$Y=\beta_0 + \beta_1 X_{1}+ \beta_2 \cdot X_{2} + ... + \beta_p X_{p}+ \varepsilon $$, 
 
-en donde 
-- $x_1$ reporta `Pregnancies`
-- $x_2$ reporta `Glucose`
-- $x_3$ reporta `BloodPressure`
-- $x_4$ reporta `SkinThickness`
-- $x_5$ reporta `Insulin`
-- $x_6$ reporta `DiabetesPedigreeFunction`
-- $x_7$ reporta `Age`
-- $x_8$ reporta el factor  $\mathbb{I} \left( Outcome = 1 \right)$ 
+donde $\varphi(X)$ es la mediana condicional de $Y$ y $\varepsilon$ es una variable aleatoria con valor medio nulo $\mathbb{E}[\varepsilon]=0$ y varianza constante $\mathbb{VAR}[\varepsilon]=\sigma^2$
 
-Los supuestos del modelo son
+La mediana condicional $ Y \approx \varphi(X)$ es una función expresada en términos de los parámetros $\beta_i$ 
 
--   Los errores $\varepsilon_i$ tienen media cero. Esto es $\mathbb{E}\left[\varepsilon_i \right] = 0$
 
--   Los errores $\varepsilon_i$ tienen todos la misma varianza. Esto es $\mathbb{VAR}\left[\varepsilon_i \right] = \sigma^2$
+$$Y\approx\varphi(X)= \beta_0 + \beta_1 X_{1}+ \beta_2 \cdot X_{2} + ... + \beta_p X_{p}$$
+El objeto de este análisis será poder encontrar un estimador de la mediana condicional $\hat y = \hat\varphi(x)$ a partir de los estimadores $\hat\beta_i$ y un vector de observaciones $x$ según
+$$\hat\varphi(x) = \hat y =\hat\beta_0 + \hat\beta_1 x_{1}+ \hat\beta_2 \cdot x_{2} + ... + \hat\beta_p x_{p}$$
+Para el problema de Diabetes, se busca estimar la mediana condicional del parámetro $Y=BMI$ en función de las variables restanes y el modelo lineal queda expresado según:
 
--   Los errores $\varepsilon_i$ tienen distribuci´on Normal. Los errores $\varepsilon_i$ son independientes entre si y no están correlacionados con las covariables $x_i$
 
-```{r}
-Modelo <- lm( BMI ~ Pregnancies + Glucose + BloodPressure + SkinThickness + Insulin + DiabetesPedigreeFunction + Age + Outcome, data = data)
+$\hat\varphi(x) = \hat {BMI} = \beta_0 + \beta_1 \ P + \beta_2 G + \beta_3 \  BP+ \beta_4 \ ST+ \beta_5 \ I + \beta_6 \ DPF+ \beta_7 \ A + \beta_8 \ O + \varepsilon$
 
+en donde $\hat y = \hat {BMI}$ es un estimador de mediana condicional de la variable aleatoria $Y=BMI$ y 
+- `P (Pregnancies)`,`G (Glucose)`,`BP (BloodPressure)` `ST (SkinThickness)` `I (Insulin)`
+`DPF (DiabetesPedigreeFunction)`, `A (Age)`, y $O$ es una variable ordinal binaria (lógica) $\mathbb{I} \left( Outcome = 1 \right)$ 
+
+Los supuestos del modelo que están implícitos aquí son los siguientes:
+
+-   Los errores $\varepsilon_i$ tienen media cero, $\mathbb{E}\left[\varepsilon_i \right] = 0$
+-   Los errores $\varepsilon_i$ tienen idnéntica varianza $\mathbb{VAR}\left[\varepsilon_i \right] = \sigma^2$
+-   Los errores $\varepsilon_i$ tienen distribución Normal. 
+-   Los errores $\varepsilon_i$ son independientes entre sí y no están correlacionados con las covariables $x_i$
+
+Los estimadores $\beta_i$ del modelo, quedan determinados segun la expresión:
+
+y a partir de la función `lm()` de R, se obtienen directamente según
+```{r echo=TRUE}
+Modelo <- lm( BMI ~ P + G + BP + ST + I + DPF + A + O, data = DT)
+Coeff <- Modelo$coefficients
 ```
 
 <!-- Aca habria que agregar una tabla mostrando los valores de cada una de las variables -->
 
+```{r echo=FALSE}
+t(Coeff) %>% as.data.table() %>% flextable() |>  colformat_double(digits = 4)
+```
+
+
 <!-- Estaría bueno agregar una explicación de cómo se calculan -->
 <!-- Explicar matrices X -->
 
-
-Se aclara que la matriz  β ̂ es el vector columna con los valores de los coeficientes
+<!-- Se aclara que la matriz  β ̂ es el vector columna con los valores de los coeficientes -->
 ## Ejercicio 3
 _Realizar un scatterplot de las variables con la función ggpairs_
 
 ```{r echo=FALSE,results='hide',fig.keep='all'}
+data <- read.csv("data/diabetes2.csv", header = TRUE)
+data$Outcome<-factor(data$Outcome)
+data$Glucose<-as.numeric(data$Glucose)
+data$BloodPressure<-as.numeric(data$BloodPressure)
+data$SkinThickness<-as.numeric(data$SkinThickness)
+data$Insulin<-as.numeric(data$Insulin)
 ggpairs(data[2:10])
 ```
 
@@ -239,6 +265,7 @@ _Evaluar la bondad del ajuste realizado, a través del coeficiente de determinac
 La bondad del ajuste puede ser medida por el estadístico $R^2$. El cual se define como
 
 $$R^2=\frac{||\hat{Y}-\bar{Y}||^2}{||Y-\bar{Y}||^2}$$
+
 
 $$R^2=\frac{||Y-\bar{Y}||^2-||Y-\hat{Y}||^2}{||Y-\bar{Y}||^2}$$
 
