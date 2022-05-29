@@ -23,7 +23,8 @@ library(ggthemes)
 library(flextable) # Plot Tables
 library(GGally)
 library(leaps)
-
+library(tibble) # rownames_to_column
+library(tidyr)# gather()
 # knit options ----
 knitr::opts_chunk$set(out.width="50%",fig.align = "center",eval=TRUE, echo = FALSE, warning = FALSE, size = "small")
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
@@ -199,23 +200,23 @@ _A partir de la tabla de correlaciones estimadas entre las variables, si tuviera
 
 Para que se obtenga un buen modelo de predicción mediante una única variable lo que se debe buscar es que el coeficiente de correlación entre las variables en valor absoluto sea lo más cercano a 1 posible. Ya que mientras mas cerca del 1 nos encontremos implicara que existe una relación "mas lineal" entre estas dos. En caso de ser positiva nos habla de que ambas crecen en conjunto, en caso de ser negativa nos indica que si una decrece la otra crece. Cuando el coeficiente de correlación se acerca en modulo a cero implica que las variables no tienen una relación lineal. Hasta llegar al caso en que la correlación es nula que nos indica que las variables están descorrelacionadas.
 
--   Si se quiere predecir la variable Pregnancies elegiría Age
+A partir de manipular la matriz de correlaciones, es posible obtener una tabla ordenada de las correlaciones entre la variable $BMI$ y las variables dependientes del modelo,
 
--   Si se quiere predecir la variable Glucose elegiría Insulin
+```{r echo=FALSE}
+DT1 <- copy(DT)
+DT1[,O:=as.numeric(O)] # remover factor
+# Tabla de correlaciones
+COR <- DT1 %>%  as.matrix() %>% cor() %>% as.data.frame() %>% 
+  rownames_to_column(var = 'var1') %>% 
+  gather(var2, value, -var1) %>% as.data.table() %>% 
+  setorderv(cols="value",order=-1) %>% 
+  setnames(old=c("var1","var2","value"),new=c("Y","X","COR(X,Y)"))
+COR[Y=="BMI"] %>% flextable()|>  colformat_double(digits = 4)
+```
 
--   Si se quiere predecir la variable Blood Pressure elegiría Age
+Según esta tabla, la variable `ST (SkinThickness)` tiene la correlación más alta con el parámetro `BMI`
 
--   Si se quiere predecir la variable Skin Thickness elegiría BMI
-
--   Si se quiere predecir la variable Insulin elegiría Glucose
-
--   Si se quiere predecir la variable BMI elegiría Skin Thickness
-
--   Si se quiere predecir la variable Diabetes Pedigree Function elegiría Glucose (en caso de facilitar el análisis podrían ser utilizadas BMI o Insulin)
-
--   Si se quiere predecir la variable Age elegiría Pregnancies
-
-Se debe tener en cuenta que para este análisis se tuvo en cuenta el coeficiente de correlación de las variables, pero para un análisis más exhaustivo se debe tener presente la complejidad de medición de cada variable, además de otros factores particulares de esta área.
+Se debe tener en cuenta que para este análisis se tuvo en cuenta únicamente el coeficiente de correlación de las variables, pero para un análisis más exhaustivo se debe tener presente la complejidad de medición de cada variable, además de otros factores particulares de esta área.
 
 ## Ejercicio 5
 _Realizar un ajuste de regresión lineal múltiple. A partir de la tabla de coeficientes estimados, ¿Qué variables resultan significativas? ¿A qué nivel? ¿Cuál es el valor de la estimación para $\sigma^2$? Especificar las hipótesis nulas y alternativas para alguno de los test t reportados en la tabla, el estadístico del test y la regla de decisión. ¿Cómo se calcula el p-valor para este test?_
