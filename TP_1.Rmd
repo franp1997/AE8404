@@ -525,6 +525,8 @@ _Validar los supuestos expresados en el ítem 2 a partir del análisis de los re
 Los errores $ε_i$ son independientes entre sí y no están correlacionados con las covariables $x_i$ (Esto no va a ser demostrado)
 
 
+<!-- cambios prueba -->
+
 <!-- Residuos de validación cruzada -->
 <!-- Shapiro wilx test -->
 
