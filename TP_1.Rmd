@@ -3,14 +3,14 @@ title: "Trabajo Práctico I"
 author: "A. Verri Kozlowski y F. Patitucci"
 subtitle: Aprendizaje Estadístico -  (84:04)
 output:
+  html_document:
+    toc: yes
+    df_print: paged
   pdf_document:
     toc: yes
     number_sections: no
     latex_engine: xelatex
     keep_tex: no
-  html_document:
-    toc: yes
-    df_print: paged
   word_document:
     toc: yes
 ---
@@ -548,6 +548,8 @@ _Validar los supuestos expresados en el ítem 2 a partir del análisis de los re
 Los errores $ε_i$ son independientes entre sí y no están correlacionados con las covariables $x_i$ (Esto no va a ser demostrado)
 
 
+
+<!-- cambio prueba--><
 <!-- Residuos de validación cruzada -->
 <!-- Shapiro wilx test -->
 
